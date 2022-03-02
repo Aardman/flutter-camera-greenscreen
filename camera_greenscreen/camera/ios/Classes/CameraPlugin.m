@@ -15,6 +15,8 @@
 #import "FLTThreadSafeTextureRegistry.h"
 #import "QueueHelper.h"
 
+#import "import-plugin-swift.h"
+
 @interface CameraPlugin ()
 @property(readonly, nonatomic) FLTThreadSafeTextureRegistry *registry;
 @property(readonly, nonatomic) NSObject<FlutterBinaryMessenger> *messenger;
@@ -98,6 +100,9 @@
 
 - (void)handleMethodCallAsync:(FlutterMethodCall *)call
                        result:(FLTThreadSafeFlutterResult *)result {
+    
+   [SwiftAPI log:call.method];
+    
   if ([@"availableCameras" isEqualToString:call.method]) {
     if (@available(iOS 10.0, *)) {
       AVCaptureDeviceDiscoverySession *discoverySession = [AVCaptureDeviceDiscoverySession
