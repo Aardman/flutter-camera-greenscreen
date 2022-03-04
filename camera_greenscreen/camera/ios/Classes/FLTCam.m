@@ -10,7 +10,7 @@
 @import CoreMotion;
 #import <libkern/OSAtomic.h>
 
-//Aardman_Animator: Swift imports
+//Aardman_Animator: imports
 #import "import-plugin-swift.h"
 
 @interface FLTImageStreamHandler : NSObject <FlutterStreamHandler>
@@ -83,13 +83,35 @@
 /// Videos are written to disk by `videoAdaptor` on an internal queue managed by AVFoundation.
 @property(strong, nonatomic) dispatch_queue_t photoIOQueue;
 @property(assign, nonatomic) UIDeviceOrientation deviceOrientation;
-
-//Aardman_Animator:
-@property(strong, nonatomic) FilterPipeline* filterPipeline;
-
+  
 @end
 
+//Aardman-animator
+@interface FLTCam ()
+@property BOOL chromakeyEnabled;
+@property(strong, nonatomic) FilterPipeline* filterPipeline;
+@property(strong, nonatomic) FilterParameters* filterParameters;
+-(void)enableChromaKey;
+-(void)disableChromaKey;
+-(void)updateFilterParameters;
+@end
+
+
 @implementation FLTCam
+
+//TODO: Move to end of class when complete Aardman-animator
+-(void)enableChromaKey {
+    self.chromakeyEnabled = YES;
+}
+-(void)disableChromaKey{
+    self.chromakeyEnabled = NO;
+}
+//Placeholder
+-(void)updateFilterParameters {
+    self.filterParameters = [[FilterParameters alloc] init];
+    self.filterPipeline = [[FilterPipeline  alloc] initWithFilterParameters:self.filterParameters];
+}
+
 
 NSString *const errorMethod = @"error";
 
@@ -128,8 +150,6 @@ NSString *const errorMethod = @"error";
     return nil;
   }
 
-  self.filterPipeline = [[FilterPipeline  alloc] initWithBackgroundImageId:@"morph"];
-
   _captureVideoOutput = [AVCaptureVideoDataOutput new];
   _captureVideoOutput.videoSettings =
       @{(NSString *)kCVPixelBufferPixelFormatTypeKey : @(_videoFormat)};
@@ -158,6 +178,12 @@ NSString *const errorMethod = @"error";
 
   [self setCaptureSessionPreset:_resolutionPreset];
   [self updateOrientation];
+    
+    
+  //Aardman-animator initialisations
+  self.filterParameters = [[FilterParameters alloc] init];
+  self.filterPipeline = [[FilterPipeline  alloc] initWithFilterParameters:self.filterParameters];
+  self.chromakeyEnabled = NO;
 
   return self;
 }

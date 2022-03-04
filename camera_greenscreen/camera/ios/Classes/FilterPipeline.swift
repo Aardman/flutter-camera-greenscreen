@@ -15,14 +15,12 @@ public class FilterPipeline : NSObject {
     var ciContext : CIContext!
       
     //Filters
-    @objc public var backgroundImageId:String? {
-        willSet {
-            guard let id = newValue else { return }
-            if let backgroundImage = UIImage(named: id ) {
-               backgroundCIImage = CIImage(image: backgroundImage)
-            }
-        }
+    @objc public var filterParameters:FilterParameters = FilterParameters() {
+         didSet {
+             updateFilters()
+         }
     }
+     
     var backgroundCIImage:CIImage?
     var chromaFilter:CIFilter?
     let compositor = CIFilter(name:"CISourceOverCompositing")
@@ -34,16 +32,16 @@ public class FilterPipeline : NSObject {
     }
     
     @objc
-    public init(backgroundImageId:String){
+    public init(filterParameters:FilterParameters){
         super.init()
         ///background image
-        if let backgroundImage = UIImage(named: backgroundImageId ) {
+        if let backgroundImage = UIImage(named: filterParameters.backgroundImage) {
            backgroundCIImage = CIImage(image: backgroundImage)
         }
         //one time init
         setupCoreImage()
         //filter stack
-        chromaFilter = chromaKeyFilter()
+        chromaFilter = chromaKeyFilter(range: self.filterParameters.chromaKeyRange)
     }
       
     ///The default hw device will be selected, currently a MTLDevice, no need to explicitly add
@@ -54,10 +52,19 @@ public class FilterPipeline : NSObject {
     
     
     //MARK:- Filters
-    func chromaKeyFilter() -> CIFilter? {
+    
+    func updateFilters() {
+        if let backgroundImage = UIImage(named: filterParameters.backgroundImage) {
+           backgroundCIImage = CIImage(image: backgroundImage)
+        }
+        chromaFilter = chromaKeyFilter(range: self.filterParameters.chromaKeyRange)
+    }
+    
+    
+    func chromaKeyFilter(range: HueRange) -> CIFilter? {
         CIFilter(name: "CIColorCube",
                  parameters: ["inputCubeDimension": Constants.cubeSize,
-                              "inputCubeData": ChromaCubeFactory().chromaCubeData(fromHue: 0.35, toHue: 0.4)])
+                              "inputCubeData": ChromaCubeFactory().chromaCubeData(fromHue: range.0, toHue: range.1)])
     }
     
     @objc
