@@ -100,9 +100,7 @@
 
 - (void)handleMethodCallAsync:(FlutterMethodCall *)call
                        result:(FLTThreadSafeFlutterResult *)result {
-    
-   [SwiftAPI log:call.method];
-    
+     
   if ([@"availableCameras" isEqualToString:call.method]) {
     if (@available(iOS 10.0, *)) {
       AVCaptureDeviceDiscoverySession *discoverySession = [AVCaptureDeviceDiscoverySession
