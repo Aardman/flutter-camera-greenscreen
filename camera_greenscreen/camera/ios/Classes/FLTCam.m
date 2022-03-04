@@ -10,6 +10,9 @@
 @import CoreMotion;
 #import <libkern/OSAtomic.h>
 
+//Aardman_Animator: Swift imports
+#import "import-plugin-swift.h"
+
 @interface FLTImageStreamHandler : NSObject <FlutterStreamHandler>
 // The queue on which `eventSink` property should be accessed
 @property(nonatomic, strong) dispatch_queue_t captureSessionQueue;
@@ -52,7 +55,7 @@
 @property(readonly, nonatomic) AVCaptureSession *captureSession;
 
 @property(readonly, nonatomic) AVCaptureInput *captureVideoInput;
-@property(readonly) CVPixelBufferRef volatile latestPixelBuffer;
+@property(readonly) CVPixelBufferRef volatile _Nonnull latestPixelBuffer;
 @property(readonly, nonatomic) CGSize captureSize;
 @property(strong, nonatomic) AVAssetWriter *videoWriter;
 @property(strong, nonatomic) AVAssetWriterInput *videoWriterInput;
@@ -80,6 +83,10 @@
 /// Videos are written to disk by `videoAdaptor` on an internal queue managed by AVFoundation.
 @property(strong, nonatomic) dispatch_queue_t photoIOQueue;
 @property(assign, nonatomic) UIDeviceOrientation deviceOrientation;
+
+//Aardman_Animator:
+@property(strong, nonatomic) FilterPipeline* filterPipeline;
+
 @end
 
 @implementation FLTCam
@@ -120,6 +127,8 @@ NSString *const errorMethod = @"error";
     *error = localError;
     return nil;
   }
+
+  self.filterPipeline = [[FilterPipeline  alloc] initWithBackgroundImageId:@"morph"];
 
   _captureVideoOutput = [AVCaptureVideoDataOutput new];
   _captureVideoOutput.videoSettings =
@@ -349,12 +358,13 @@ NSString *const errorMethod = @"error";
   }
 }
 
-- (void)captureOutput:(AVCaptureOutput *)output
-    didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
-           fromConnection:(AVCaptureConnection *)connection {
-  if (output == _captureVideoOutput) {
+//Aardman_Animator: Copy sample buffer to the latest buffer
+//Process latest buffer using CI filter pipeline.
+-(void) processSampleBuffer:(CMSampleBufferRef)sampleBuffer {
     CVPixelBufferRef newBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
     CFRetain(newBuffer);
+    ///Write filtered content to the framebuffer
+    [self.filterPipeline filter:newBuffer];
     CVPixelBufferRef old = _latestPixelBuffer;
     while (!OSAtomicCompareAndSwapPtrBarrier(old, newBuffer, (void **)&_latestPixelBuffer)) {
       old = _latestPixelBuffer;
@@ -362,9 +372,22 @@ NSString *const errorMethod = @"error";
     if (old != nil) {
       CFRelease(old);
     }
+}
+
+//Aardman_Animator: This results in a call to copyPixelBuffer from _latestPixelBuffer in the  <FlutterTexture> impl.
+-(void) executeFlutterCallbackIfNeeded {
     if (_onFrameAvailable) {
       _onFrameAvailable();
     }
+}
+
+- (void)captureOutput:(AVCaptureOutput *)output
+    didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
+           fromConnection:(AVCaptureConnection *)connection {
+  if (output == _captureVideoOutput) {
+      //Aardman_Animator:Split concerns
+      [self processSampleBuffer:sampleBuffer];
+      [self executeFlutterCallbackIfNeeded];
   }
   if (!CMSampleBufferDataIsReady(sampleBuffer)) {
     [_methodChannel invokeMethod:errorMethod
