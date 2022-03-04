@@ -6,7 +6,7 @@
 //
 
 import UIKit
-import CoreImage 
+import CoreImage
 
 @objc
 public class FilterPipeline : NSObject {
@@ -57,7 +57,7 @@ public class FilterPipeline : NSObject {
     func chromaKeyFilter() -> CIFilter? {
         CIFilter(name: "CIColorCube",
                  parameters: ["inputCubeDimension": Constants.cubeSize,
-                              "inputCubeData": ChromaCubeFactory().chromaCubeData(fromHue: 0.2, toHue: 0.4)])
+                              "inputCubeData": ChromaCubeFactory().chromaCubeData(fromHue: 0.35, toHue: 0.4)])
     }
     
     @objc
