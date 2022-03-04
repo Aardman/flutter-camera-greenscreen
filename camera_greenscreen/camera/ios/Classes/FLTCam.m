@@ -55,7 +55,7 @@
 @property(readonly, nonatomic) AVCaptureSession *captureSession;
 
 @property(readonly, nonatomic) AVCaptureInput *captureVideoInput;
-@property(readonly) CVPixelBufferRef volatile _Nonnull latestPixelBuffer;
+@property(readonly) CVPixelBufferRef volatile latestPixelBuffer;
 @property(readonly, nonatomic) CGSize captureSize;
 @property(strong, nonatomic) AVAssetWriter *videoWriter;
 @property(strong, nonatomic) AVAssetWriterInput *videoWriterInput;
