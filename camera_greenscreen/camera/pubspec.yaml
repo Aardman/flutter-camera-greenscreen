@@ -24,7 +24,7 @@ flutter:
 dependencies: 
    camera_platform_interface:
     git:
-      url: https://github.com/Aardman/flutter-camera-greenscreen
+      url: https://github.com/Aardman/flutter-camera-greenscreen/tree/0.9.4+15
       path: camera_greenscreen/camera_platform_interface
   camera_web: ^0.2.1
   flutter:
