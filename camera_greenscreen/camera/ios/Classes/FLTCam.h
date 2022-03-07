@@ -81,6 +81,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setZoomLevel:(CGFloat)zoom Result:(FLTThreadSafeFlutterResult *)result;
 - (void)setUpCaptureSessionForAudio;
 
+//Aardman_Animator
+- (void)enableFiltersWithResult:(FLTThreadSafeFlutterResult *)result;
+- (void)disableFiltersWithResult:(FLTThreadSafeFlutterResult *)result;
+
 @end
 
 NS_ASSUME_NONNULL_END

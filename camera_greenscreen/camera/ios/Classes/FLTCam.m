@@ -86,7 +86,7 @@
   
 @end
 
-//Aardman-animator
+//Aardman_Animator
 @interface FLTCam ()
 @property BOOL chromakeyEnabled;
 @property(strong, nonatomic) FilterPipeline* filterPipeline;
@@ -99,6 +99,7 @@
 
 @implementation FLTCam
 
+//Aardman_Animator
 //TODO: Move to end of class when complete Aardman-animator
 -(void)enableChromaKey {
     self.chromakeyEnabled = YES;
@@ -180,10 +181,10 @@ NSString *const errorMethod = @"error";
   [self updateOrientation];
     
     
-  //Aardman-animator initialisations
+  //Aardman_Animator initialisations
   self.filterParameters = [[FilterParameters alloc] init];
   self.filterPipeline = [[FilterPipeline  alloc] initWithFilterParameters:self.filterParameters];
-  self.chromakeyEnabled = NO;
+  self.chromakeyEnabled = YES;
 
   return self;
 }
@@ -389,8 +390,10 @@ NSString *const errorMethod = @"error";
 -(void) processSampleBuffer:(CMSampleBufferRef)sampleBuffer {
     CVPixelBufferRef newBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
     CFRetain(newBuffer);
-    ///Write filtered content to the framebuffer
-    [self.filterPipeline filter:newBuffer];
+    if (_chromakeyEnabled){
+        ///Write filtered content to the framebuffer
+        [self.filterPipeline filter:newBuffer];
+    }
     CVPixelBufferRef old = _latestPixelBuffer;
     while (!OSAtomicCompareAndSwapPtrBarrier(old, newBuffer, (void **)&_latestPixelBuffer)) {
       old = _latestPixelBuffer;
@@ -847,6 +850,18 @@ NSString *const errorMethod = @"error";
   _isPreviewPaused = false;
   [result sendSuccess];
 }
+
+//Aardman_Animator: API extensions
+- (void)enableFiltersWithResult:(FLTThreadSafeFlutterResult *)result {
+    self.chromakeyEnabled = true;
+    [result sendSuccess];
+}
+- (void)disableFiltersWithResult:(FLTThreadSafeFlutterResult *)result {
+    self.chromakeyEnabled = false;
+    [result sendSuccess];
+}
+
+ 
 
 - (CGPoint)getCGPointForCoordsWithOrientation:(UIDeviceOrientation)orientation
                                             x:(double)x

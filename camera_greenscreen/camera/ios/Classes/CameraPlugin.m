@@ -268,7 +268,16 @@
       [_camera pausePreviewWithResult:result];
     } else if ([@"resumePreview" isEqualToString:call.method]) {
       [_camera resumePreviewWithResult:result];
-    } else {
+    }
+    
+    //Aardman_Animator
+    else if ([@"enableFilters" isEqualToString:call.method]) {
+        [_camera enableFiltersWithResult:result];
+    } else if ([@"disableFilters" isEqualToString:call.method]) {
+        [_camera disableFiltersWithResult:result];
+    }
+    
+      else {
       [result sendNotImplemented];
     }
   }
