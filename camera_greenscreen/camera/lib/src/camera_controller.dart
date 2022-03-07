@@ -54,6 +54,7 @@ class CameraValue {
     this.recordingOrientation,
     this.isPreviewPaused = false,
     this.previewPauseOrientation,
+    //this.isFilteringEnabled,
   }) : _isRecordingPaused = isRecordingPaused;
 
   /// Creates a new camera controller state for an uninitialized controller.
@@ -71,6 +72,7 @@ class CameraValue {
           focusPointSupported: false,
           deviceOrientation: DeviceOrientation.portraitUp,
           isPreviewPaused: false,
+          //isFilteringEnabled: false,
         );
 
   /// True after [CameraController.initialize] has completed successfully.
@@ -144,6 +146,9 @@ class CameraValue {
   /// The orientation of the currently running video recording.
   final DeviceOrientation? recordingOrientation;
 
+  //Aardman-Animator
+  //final bool isFilteringEnabled;
+
   /// Creates a modified copy of the object.
   ///
   /// Explicitly specified fields get the specified value, all other fields get
@@ -166,6 +171,7 @@ class CameraValue {
     Optional<DeviceOrientation>? recordingOrientation,
     bool? isPreviewPaused,
     Optional<DeviceOrientation>? previewPauseOrientation,
+    //bool?  isFilteringEnabled,
   }) {
     return CameraValue(
       isInitialized: isInitialized ?? this.isInitialized,
@@ -192,6 +198,7 @@ class CameraValue {
       previewPauseOrientation: previewPauseOrientation == null
           ? this.previewPauseOrientation
           : previewPauseOrientation.orNull,
+      //isFilteringEnabled: isFilteringEnabled ?? this.isFilteringEnabled,
     );
   }
 
@@ -212,9 +219,20 @@ class CameraValue {
         'lockedCaptureOrientation: $lockedCaptureOrientation, '
         'recordingOrientation: $recordingOrientation, '
         'isPreviewPaused: $isPreviewPaused, '
-        'previewPausedOrientation: $previewPauseOrientation)';
+       // 'isFilteringEnabled: $isFilteringEnabled',
+        'previewPausedOrientation: $previewPauseOrientation )';
   }
 }
+
+
+
+/*************************
+ * 
+ * THE ACTUAL CAMERA CLASS
+ *   
+ *************************/
+
+
 
 /// Controls a device camera.
 ///
@@ -847,4 +865,20 @@ class CameraController extends ValueNotifier<CameraValue> {
       super.removeListener(listener);
     }
   }
+
+
+//Aardman-animator  
+ 
+  // // Enables Chromakeying 
+  Future<void> enableFilters() async {
+    //await CameraPlatform.instance.;
+    print('Call the camera to enable the filters');
+  }
+  
+  // // Disables Chromakeying
+  // Future<void> disableFilters() async {
+  //   await CameraPlatform.instance.disableFilters();
+  // }
+ 
+
 }

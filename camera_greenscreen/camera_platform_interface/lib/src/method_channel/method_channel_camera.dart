@@ -534,4 +534,17 @@ class MethodChannelCamera extends CameraPlatform {
         throw MissingPluginException();
     }
   }
+
+//Aardman-animator
+ @override
+  Future<void> enableFilters() async {
+    await _channel.invokeMethod<void>('enableFilters');
+  }
+
+
+  // Future<void> disableFilters() async {
+  //   await _channel.invokeMethod<void>('disableFilters');
+  // }
+ 
+
 }
