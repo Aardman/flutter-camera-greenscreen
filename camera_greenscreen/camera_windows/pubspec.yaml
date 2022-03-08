@@ -1,7 +1,8 @@
 name: camera_windows
 description: A Flutter plugin for getting information about and controlling the camera on Windows.
 version: 0.1.0
-repository: https://github.com/flutter/plugins/tree/master/packages/camera/camera_windows
+#repository: https://github.com/flutter/plugins/tree/master/packages/camera/camera_windows
+repository:  https://github.com/Aardman/flutter-camera-greenscreen/camera_greenscreen/camera_windows
 issue_tracker: https://github.com/flutter/flutter/issues?q=is%3Aissue+is%3Aopen+label%3A%22p%3A+camera%22
 
 environment:
@@ -17,7 +18,11 @@ flutter:
         dartPluginClass: CameraWindows
 
 dependencies:
-  camera_platform_interface: ^2.1.2
+  #camera_platform_interface: ^2.1.2   
+  camera_platform_interface:
+    git:
+      url: https://github.com/Aardman/flutter-camera-greenscreen
+      path: camera_greenscreen/camera_platform_interface
   cross_file: ^0.3.1
   flutter:
     sdk: flutter
