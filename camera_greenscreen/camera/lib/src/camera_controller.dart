@@ -867,12 +867,12 @@ class CameraController extends ValueNotifier<CameraValue> {
   // // Enables Chromakeying
   Future<void> enableFilters() async {
     await CameraPlatform.instance.enableFilters();
-    //print('Call the camera to enable the filters');
+    print('Call the camera to enable the filters');
   }
 
   // // Disables Chromakeying
   Future<void> disableFilters() async {
-    await CameraPlatform.instance.disableFilters();
-    //print('Call the camera to  disable the filters');
+    //await CameraPlatform.instance.disableFilters();
+    print('Call the camera to  disable the filters');
   }
 }
