@@ -557,16 +557,57 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
               : null,
         ),
         IconButton(
-          icon: const Icon(Icons.pause_presentation),
-          color:
-              cameraController != null && cameraController.value.isPreviewPaused
-                  ? Colors.red
-                  : Colors.blue,
-          onPressed:
-              cameraController == null ? null : onPausePreviewButtonPressed,
-        ),
+            icon: const Icon(Icons.pause_presentation),
+            color: cameraController != null &&
+                    cameraController.value.isPreviewPaused
+                ? Colors.red
+                : Colors.blue,
+            onPressed:
+                cameraController == null ? null : onPausePreviewButtonPressed),
+        IconButton(
+            icon: const Icon(Icons.invert_colors),
+            color: Colors.green,
+            onPressed:
+                cameraController == null ? null : onChromakeyEnablePressed),
+        IconButton(
+            icon: const Icon(Icons.invert_colors_off),
+            color: Colors.grey,
+            onPressed:
+                cameraController == null ? null : onChromakeyDisablePressed),
       ],
     );
+  }
+
+//Aardman-animator - basic demonstration of API for Chromakey
+
+  Future<void> onChromakeyEnablePressed() async {
+    final CameraController? cameraController = controller;
+
+    if (cameraController == null || !cameraController.value.isInitialized) {
+      showInSnackBar('Error: select a camera first.');
+      return;
+    }
+
+    await cameraController.enableFilters();
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> onChromakeyDisablePressed() async {
+    final CameraController? cameraController = controller;
+
+    if (cameraController == null || !cameraController.value.isInitialized) {
+      showInSnackBar('Error: select a camera first.');
+      return;
+    }
+
+    await cameraController.disableFilters();
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   /// Display a row of toggle to select the camera (or a message if no camera is available).
@@ -813,8 +854,6 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
     } else {
       await cameraController.pausePreview();
     }
-
-    cameraController.enableFilters();
 
     if (mounted) {
       setState(() {});
