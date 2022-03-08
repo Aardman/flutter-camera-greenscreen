@@ -536,15 +536,12 @@ class MethodChannelCamera extends CameraPlatform {
   }
 
 //Aardman-animator
- @override
+  @override
   Future<void> enableFilters() async {
     await _channel.invokeMethod<void>('enableFilters');
   }
 
-
-  // Future<void> disableFilters() async {
-  //   await _channel.invokeMethod<void>('disableFilters');
-  // }
- 
-
+  Future<void> disableFilters() async {
+    await _channel.invokeMethod<void>('disableFilters');
+  }
 }

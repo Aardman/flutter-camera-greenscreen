@@ -257,16 +257,15 @@ abstract class CameraPlatform extends PlatformInterface {
     throw UnimplementedError('dispose() is not implemented.');
   }
 
-  //Aardman-Animator 
-  
+  //Aardman-Animator
+
   /// Enables Chromakeying
-  Future<void> enableFilters(){
+  Future<void> enableFilters() {
     throw UnimplementedError('enableFilters() is not implemented.');
   }
 
   /// Disables Chromakeying
-  // Future<void> disableFilters()  {
-  //   throw UnimplementedError('disableFilters() is not implemented.');
-  // }
-
+  Future<void> disableFilters() {
+    throw UnimplementedError('disableFilters() is not implemented.');
+  }
 }
