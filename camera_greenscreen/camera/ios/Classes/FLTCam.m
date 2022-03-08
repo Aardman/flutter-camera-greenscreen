@@ -184,7 +184,7 @@ NSString *const errorMethod = @"error";
   //Aardman_Animator initialisations
   self.filterParameters = [[FilterParameters alloc] init];
   self.filterPipeline = [[FilterPipeline  alloc] initWithFilterParameters:self.filterParameters];
-  self.chromakeyEnabled = YES;
+  self.chromakeyEnabled = NO;
 
   return self;
 }

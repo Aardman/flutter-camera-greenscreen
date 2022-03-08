@@ -814,7 +814,7 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
       await cameraController.pausePreview();
     }
 
-    // cameraController.enableFilters();
+    cameraController.enableFilters();
 
     if (mounted) {
       setState(() {});
