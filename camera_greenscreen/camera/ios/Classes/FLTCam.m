@@ -276,6 +276,11 @@ NSString *const errorMethod = @"error";
           [result sendSuccessWithData:path];
         }
       }];
+     
+//Aardman-animator can't add to initialiser as its defined by AVFoundation, this is simpler
+  if(self.filterPipeline && self.chromakeyEnabled){
+      [savePhotoDelegate setFilters:self.filterPipeline];
+  }
 
   NSAssert(dispatch_get_specific(FLTCaptureSessionQueueSpecific),
            @"save photo delegate references must be updated on the capture session queue");

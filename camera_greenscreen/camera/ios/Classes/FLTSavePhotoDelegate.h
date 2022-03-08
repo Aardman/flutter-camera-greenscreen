@@ -4,6 +4,7 @@
 
 @import AVFoundation;
 @import Foundation;
+#import "import-plugin-swift.h"
 
 #import "FLTThreadSafeFlutterResult.h"
 
@@ -33,6 +34,12 @@ typedef void (^FLTSavePhotoDelegateCompletionHandler)(NSString *_Nullable path,
 - (instancetype)initWithPath:(NSString *)path
                      ioQueue:(dispatch_queue_t)ioQueue
            completionHandler:(FLTSavePhotoDelegateCompletionHandler)completionHandler;
+
+//Aardman-animator
+//If filters are non-nil then they will be applied
+//This is used both to set and change filters and to enable/disable them
+- (void) setFilters:(FilterPipeline *) filterpipeline;
+
 @end
 
 NS_ASSUME_NONNULL_END

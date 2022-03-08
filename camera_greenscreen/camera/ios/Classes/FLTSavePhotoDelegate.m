@@ -4,12 +4,14 @@
 
 #import "FLTSavePhotoDelegate.h"
 #import "FLTSavePhotoDelegate_Test.h"
+#import "import-plugin-swift.h"
 
 @interface FLTSavePhotoDelegate ()
 /// The file path for the captured photo.
 @property(readonly, nonatomic) NSString *path;
 /// The queue on which captured photos are written to disk.
 @property(readonly, nonatomic) dispatch_queue_t ioQueue;
+@property(weak, nonatomic) FilterPipeline * filterpipeline;
 @end
 
 @implementation FLTSavePhotoDelegate
@@ -21,8 +23,13 @@
   NSAssert(self, @"super init cannot be nil");
   _path = path;
   _ioQueue = ioQueue;
+  _filterpipeline = nil;
   _completionHandler = completionHandler;
   return self;
+}
+
+- (void) setFilters:(FilterPipeline *) filterpipeline {
+    _filterpipeline = filterpipeline;
 }
 
 - (void)handlePhotoCaptureResultWithError:(NSError *)error
@@ -62,8 +69,19 @@
                        error:(NSError *)error API_AVAILABLE(ios(11.0)) {
   [self handlePhotoCaptureResultWithError:error
                         photoDataProvider:^NSData * {
-                          return [photo fileDataRepresentation];
-                        }];
+                        
+      if(self.filterpipeline){
+          NSData * photoData =  [self.filterpipeline filterAsPhoto:photo];
+          if (photoData) {
+              return photoData;
+          }
+      }
+       
+      //return unfiltered data if no-filtering is available
+      //or if filtered data is nil
+      return [photo fileDataRepresentation];
+       
+  }];
 }
 
 @end

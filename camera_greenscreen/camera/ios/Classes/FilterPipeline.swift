@@ -7,6 +7,7 @@
 
 import UIKit
 import CoreImage
+import AVFoundation
 
 @objc
 public class FilterPipeline : NSObject {
@@ -76,6 +77,21 @@ public class FilterPipeline : NSObject {
         ciContext.render(filtered, to: buf)
     }
        
+    @objc
+    @available(iOS 11.0, *)
+    public func filter(asPhoto photo: AVCapturePhoto?) -> NSData? {
+        guard let inputData = photo?.fileDataRepresentation(),
+              let inputImage = CIImage(data: inputData)  else { return nil }
+        guard let filtered = applyFilters(inputImage: inputImage),
+              let colourspace = CGColorSpace(name:CGColorSpace.sRGB)
+        else { return nil }
+        guard
+            let data = ciContext.jpegRepresentation(of: filtered, colorSpace:colourspace)
+        else { return nil }
+        return data as NSData?
+    }
+ 
+    
     func applyFilters(inputImage camImage: CIImage) -> CIImage? {
          
         if backgroundCIImage == nil {
@@ -92,14 +108,30 @@ public class FilterPipeline : NSObject {
         chromaFilter.setValue(camImage, forKey: kCIInputImageKey)
 
         //Apply and composite
-        if let sourceCIImageWithoutBackground = chromaFilter.outputImage {
-            compositor?.setValue(sourceCIImageWithoutBackground, forKey: kCIInputImageKey)
-            compositor?.setValue(backgroundCIImage, forKey: kCIInputBackgroundImageKey)
-            guard let compositedCIImage = compositor?.outputImage   else { return nil}
-            return compositedCIImage
-        }
-         
-        return nil
+//        if let sourceCIImageWithoutBackground = chromaFilter.outputImage {
+//            compositor?.setValue(sourceCIImageWithoutBackground, forKey: kCIInputImageKey)
+//            compositor?.setValue(backgroundCIImage, forKey: kCIInputBackgroundImageKey)
+//            guard let compositedCIImage = compositor?.outputImage   else { return nil}
+//            return compositedCIImage
+//        }
+          
+        return chromaFilter.outputImage
     }
        
 }
+
+
+
+///Helper extension  converts CGImage to Data
+extension CGImage {
+    var png: Data? {
+        guard let mutableData = CFDataCreateMutable(nil, 0),
+            let destination = CGImageDestinationCreateWithData(mutableData, "public.png" as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(destination, self, nil)
+        guard CGImageDestinationFinalize(destination) else { return nil }
+        return mutableData as Data
+    }
+}
+
+
+
