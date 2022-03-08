@@ -541,6 +541,7 @@ class MethodChannelCamera extends CameraPlatform {
     await _channel.invokeMethod<void>('enableFilters');
   }
 
+  @override
   Future<void> disableFilters() async {
     await _channel.invokeMethod<void>('disableFilters');
   }
