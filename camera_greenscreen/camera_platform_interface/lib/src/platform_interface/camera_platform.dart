@@ -268,4 +268,9 @@ abstract class CameraPlatform extends PlatformInterface {
   Future<void> disableFilters() {
     throw UnimplementedError('disableFilters() is not implemented.');
   }
+
+   /// Changes parameters for filters, eg: background  path and hue
+  Future<void> updateFilters() {
+    throw UnimplementedError('updateFilters() is not implemented.');
+  }
 }
