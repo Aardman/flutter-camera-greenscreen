@@ -22,10 +22,10 @@ flutter:
         default_package: camera_web
 
 dependencies: 
-  camera_platform_interface:
-  git:
-    url: https://github.com/Aardman/flutter-camera-greenscreen/tree/0.9.4+16
-    path: camera_greenscreen/camera_platform_interface
+  camera_platform_interface: ^2.1.0
+  # git:
+  #  url: https://github.com/Aardman/flutter-camera-greenscreen/tree/0.9.4+16
+  #  path: camera_greenscreen/camera_platform_interface
   camera_web: ^0.2.1
   flutter:
     sdk: flutter
