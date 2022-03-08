@@ -219,20 +219,16 @@ class CameraValue {
         'lockedCaptureOrientation: $lockedCaptureOrientation, '
         'recordingOrientation: $recordingOrientation, '
         'isPreviewPaused: $isPreviewPaused, '
-       // 'isFilteringEnabled: $isFilteringEnabled',
+        // 'isFilteringEnabled: $isFilteringEnabled',
         'previewPausedOrientation: $previewPauseOrientation )';
   }
 }
-
-
 
 /*************************
  * 
  * THE ACTUAL CAMERA CLASS
  *   
  *************************/
-
-
 
 /// Controls a device camera.
 ///
@@ -866,19 +862,17 @@ class CameraController extends ValueNotifier<CameraValue> {
     }
   }
 
+//Aardman-animator
 
-//Aardman-animator  
- 
-  // // Enables Chromakeying 
+  // // Enables Chromakeying
   Future<void> enableFilters() async {
-    //await CameraPlatform.instance.;
-    print('Call the camera to enable the filters');
+    await CameraPlatform.instance.enableFilters();
+    //print('Call the camera to enable the filters');
   }
-  
-  // // Disables Chromakeying
-  // Future<void> disableFilters() async {
-  //   await CameraPlatform.instance.disableFilters();
-  // }
- 
 
+  // // Disables Chromakeying
+  Future<void> disableFilters() async {
+    await CameraPlatform.instance.disableFilters();
+    //print('Call the camera to  disable the filters');
+  }
 }
