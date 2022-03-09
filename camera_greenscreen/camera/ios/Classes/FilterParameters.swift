@@ -19,14 +19,14 @@ public class FilterParameters: NSObject {
     @objc
     //Convenience for initialising default
     override public init()  {
-        self.chromaKeyRange  = (0.35, 0.45)
+        self.chromaKeyRange  = (0.2, 0.65)
         self.backgroundImage = ""
         self.maskBounds = [CGPoint.zero, CGPoint.zero, CGPoint.zero, CGPoint.zero]
         super.init()
     }
     
     @objc
-    public init(hueLow:Double = 0.35, hueHigh:Double = 0.45, backgroundImage:String = "",
+    public init(hueLow:Double = 0.2, hueHigh:Double = 0.65, backgroundImage:String = "",
                 maskVertex1: CGPoint,
                 maskVertex2: CGPoint,
                 maskVertex3: CGPoint,
