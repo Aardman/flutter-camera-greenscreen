@@ -81,7 +81,7 @@ public class FilterPipeline : NSObject {
     @available(iOS 11.0, *)
     public func filter(asPhoto photo: AVCapturePhoto?) -> NSData? {
         guard let inputData = photo?.fileDataRepresentation(),
-              let inputImage = CIImage(data: inputData)  else { return nil }
+              let inputImage = CIImage(data: inputData) else { return nil }
         guard let filtered = applyFilters(inputImage: inputImage),
               let colourspace = CGColorSpace(name:CGColorSpace.sRGB)
         else { return nil }
@@ -107,15 +107,14 @@ public class FilterPipeline : NSObject {
         //Chroma
         chromaFilter.setValue(camImage, forKey: kCIInputImageKey)
 
-        //Apply and composite
-//        if let sourceCIImageWithoutBackground = chromaFilter.outputImage {
-//            compositor?.setValue(sourceCIImageWithoutBackground, forKey: kCIInputImageKey)
-//            compositor?.setValue(backgroundCIImage, forKey: kCIInputBackgroundImageKey)
-//            guard let compositedCIImage = compositor?.outputImage   else { return nil}
-//            return compositedCIImage
-//        }
-          
-        return chromaFilter.outputImage
+        //Apply and composite with the background image
+        guard let photoWithChromaColourRemoved = chromaFilter.outputImage else { return camImage }
+        compositor?.setValue(photoWithChromaColourRemoved, forKey: kCIInputImageKey)
+        compositor?.setValue(backgroundCIImage, forKey: kCIInputBackgroundImageKey)
+        
+        guard let compositedCIImage = compositor?.outputImage   else { return nil }
+ 
+        return compositedCIImage
     }
        
 }
