@@ -39,6 +39,12 @@ public class FilterPipeline : NSObject {
         if let backgroundImage = UIImage(named: filterParameters.backgroundImage) {
            backgroundCIImage = CIImage(image: backgroundImage)
         }
+        //else load demo asset
+        else {
+            if let backgroundImage = UIImage(named: "demo_background") {
+                backgroundCIImage = CIImage(image:backgroundImage)
+            }
+        }
         //one time init
         setupCoreImage()
         //filter stack
