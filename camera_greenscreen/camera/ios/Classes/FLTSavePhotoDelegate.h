@@ -4,7 +4,7 @@
 
 @import AVFoundation;
 @import Foundation;
-#import "import-plugin-swift.h"
+@class FilterPipeline;
 
 #import "FLTThreadSafeFlutterResult.h"
 
