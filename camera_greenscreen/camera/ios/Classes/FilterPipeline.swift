@@ -23,6 +23,7 @@ public class FilterPipeline : NSObject {
     }
      
     var backgroundCIImage:CIImage?
+    var scaledBackgroundCIImage:CIImage?
     var chromaFilter:CIFilter?
     let compositor = CIFilter(name:"CISourceOverCompositing")
     
@@ -79,6 +80,9 @@ public class FilterPipeline : NSObject {
     public func filter(_ buffer:CVPixelBuffer?) {
         guard let buf = buffer else { return  }
         let outputImage = CIImage(cvPixelBuffer: buf, options:[:])
+        if let background = backgroundCIImage {
+            scaledBackgroundCIImage = scaleImage(ciImage: background, into: outputImage)
+        }
         guard let filtered = applyFilters(inputImage: outputImage) else { return }
         ciContext.render(filtered, to: buf)
     }
@@ -100,14 +104,13 @@ public class FilterPipeline : NSObject {
     
     func applyFilters(inputImage camImage: CIImage) -> CIImage? {
          
-        if backgroundCIImage == nil {
+        if scaledBackgroundCIImage == nil {
           //Test background when there is no background image available
           let colourGen = CIFilter(name: "CIConstantColorGenerator")
           colourGen?.setValue(CIColor(red: 1.0, green: 0.0, blue: 0.0), forKey: "inputColor")
-          backgroundCIImage = colourGen?.outputImage
-          guard let _ = backgroundCIImage else { return camImage }
+          scaledBackgroundCIImage = colourGen?.outputImage
         }
-        
+          
         guard let chromaFilter = self.chromaFilter else {  return camImage }
 
         //Chroma
@@ -116,13 +119,28 @@ public class FilterPipeline : NSObject {
         //Apply and composite with the background image
         guard let photoWithChromaColourRemoved = chromaFilter.outputImage else { return camImage }
         compositor?.setValue(photoWithChromaColourRemoved, forKey: kCIInputImageKey)
-        compositor?.setValue(backgroundCIImage, forKey: kCIInputBackgroundImageKey)
+        compositor?.setValue(scaledBackgroundCIImage, forKey: kCIInputBackgroundImageKey)
         
         guard let compositedCIImage = compositor?.outputImage   else { return nil }
  
         return compositedCIImage
     }
-       
+    
+    /// - into image is only provided for calculating the  desired size of the scaled output
+    func scaleImage(ciImage:CIImage, into image:CIImage) -> CIImage? {
+        let scale = calculateScale(input: ciImage, output: image)
+        guard let filter = CIFilter(name: "CILanczosScaleTransform") else { return nil }
+        filter.setValue(ciImage, forKey: kCIInputImageKey)
+        filter.setValue(scale,   forKey: kCIInputScaleKey)
+        filter.setValue(1.0,     forKey: kCIInputAspectRatioKey)
+        return filter.outputImage
+    }
+    
+    func calculateScale(input: CIImage, output: CIImage) -> CGFloat {
+        return 0.6
+    }
+    
+    
 }
 
  
