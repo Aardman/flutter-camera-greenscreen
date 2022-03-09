@@ -11,7 +11,8 @@ A Flutter plugin to use the camera from your Flutter app.
   s.homepage         = 'https://github.com/flutter/plugins'
   s.license          = { :type => 'BSD', :file => '../LICENSE' }
   s.author           = { 'Flutter Dev Team' => 'flutter-dev@googlegroups.com' }
-  s.source           = { :http => 'https://github.com/flutter/plugins/tree/main/packages/camera' }
+  # s.source           = { :http => 'https://github.com/flutter/plugins/tree/main/packages/camera' }
+  s.source           = { :http => 'https://github.com/Aardman/flutter-camera-greenscreen/camera_greenscreen/camera' }
   s.documentation_url = 'https://pub.dev/packages/camera'
   s.source_files = 'Classes/**/*.{h,m,swift}'
   s.public_header_files = 'Classes/**/*.h'
