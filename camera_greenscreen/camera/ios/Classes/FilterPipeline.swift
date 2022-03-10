@@ -27,7 +27,8 @@ public class FilterPipeline : NSObject {
     var chromaFilter:CIFilter?
     let compositor = CIFilter(name:"CISourceOverCompositing")
     
-    //MARK:- Initialise pipeline
+    
+    //MARK: - Initialise pipeline
     @objc
     public override init(){
         super.init()
@@ -59,7 +60,7 @@ public class FilterPipeline : NSObject {
     }
     
     
-    //MARK:- Filters
+    //MARK:  - Filter init
     
     func updateFilters() {
         if let backgroundImage = UIImage(named: filterParameters.backgroundImage) {
@@ -75,6 +76,8 @@ public class FilterPipeline : NSObject {
                               "inputCubeData": ChromaCubeFactory().chromaCubeData(fromHue: range.0, toHue: range.1)])
     }
     
+    
+    //MARK: - Objc API
     
     @objc
     //No need to lock pixel buffer currently
@@ -109,6 +112,8 @@ public class FilterPipeline : NSObject {
     }
     
     
+    //MARK: - Apply filtering
+    
     /// Filters and transforms for the input image which must be correctly rotated
     /// prior to application of filters
     func applyFilters(inputImage camImage: CIImage) -> CIImage? {
@@ -136,7 +141,7 @@ public class FilterPipeline : NSObject {
     }
       
     
-    //MARK: - Handling background
+   //MARK: - Background formatting
     
    //Camera image is a correctly oriented CI image from the camera, ie: if an AVPhotoResponse
    //it has already been rotated to align with the input background
@@ -195,19 +200,17 @@ public class FilterPipeline : NSObject {
             return ciImage?.cropped(to: windowRect)
         }
     }
-    
      
 }
 
 
-//Helper extensions
+//MARK: - Helper extensions
 
 extension CIImage {
     func getSize() -> CGSize {
         return CGSize(width: extent.width, height:extent.height)
     }
 }
-
 
 @available(iOS 11.0, *)
 extension AVCapturePhoto {
