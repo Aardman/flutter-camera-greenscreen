@@ -7,8 +7,9 @@
 
 import UIKit
  
-enum Constants  {
-   public static let cubeSize:Int  = 64
+enum FilterConstants  {
+    public static let cubeSize:Int  = 64
+    public static let defaultOrientationPortraitUp:UInt32 = 6
 }
 
 struct ChromaCubeFactory {
@@ -29,7 +30,7 @@ struct ChromaCubeFactory {
     // to transparent pixels in the output
     func chromaCube(fromHue: CGFloat, toHue: CGFloat) ->  [Float] {
         
-       let cubeSize = Constants.cubeSize
+       let cubeSize = FilterConstants.cubeSize
        var cubeRGB = [Float]()
             
         for z in 0 ..< cubeSize {
