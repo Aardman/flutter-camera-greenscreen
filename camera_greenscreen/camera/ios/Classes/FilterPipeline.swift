@@ -136,15 +136,18 @@ public class FilterPipeline : NSObject {
     }
       
     
-    //MARK:- Handling background
+    //MARK: - Handling background
     
    //Camera image is a correctly oriented CI image from the camera, ie: if an AVPhotoResponse
    //it has already been rotated to align with the input background
    func transformBackgroundToFit(backgroundCIImage:CIImage, cameraImage:CIImage) -> CIImage?  {
        let scaledImage = scaleImage(fromImage: backgroundCIImage, into: cameraImage.getSize())
-       let croppedImage = cropImage(ciImage: scaledImage, to: cameraImage.getSize())
+       let translatedImage = translateImage(fromImage:scaledImage, centeredBy:cameraImage.getSize())
+       let croppedImage = cropImage(ciImage: translatedImage, to: cameraImage.getSize())
        return croppedImage
    }
+     
+    //MARK: Scale background
     
     /// - into image is only provided for calculating the  desired size of the scaled output
     func scaleImage(fromImage:CIImage, into targetDimensions:CGSize) -> CIImage? {
@@ -156,6 +159,7 @@ public class FilterPipeline : NSObject {
         scaleFilter.setValue(1.0,     forKey: kCIInputAspectRatioKey)
         return scaleFilter.outputImage
     }
+
     
     //Scale to fit the height
     //We will allow the background to misalign with the center at this point. We may need
@@ -164,7 +168,20 @@ public class FilterPipeline : NSObject {
         return  toFitWithinHeightOf.height / input.height
     }
     
-    //Use CICrop to crop out from the center of the provided CIImage
+   //MARK: Translate background
+     
+    //Return the CGRect that is a window into the target size from the center
+    func translateImage(fromImage:CIImage?, centeredBy targetSize:CGSize) -> CIImage? {
+        guard let inputImage = fromImage else  { return nil }
+        let offset = (inputImage.getSize().width - targetSize.width)/2
+        let transform = CGAffineTransform(translationX: -offset, y: 0.0)
+        return inputImage.transformed(by: transform)
+    }
+    
+   //MARK: Crop background
+    
+    //Crop out from the center of the provided CIImage
+    //Background must be translated first
     func cropImage(ciImage: CIImage?, to targetSize:CGSize) -> CIImage? {
         guard let image = ciImage else { return ciImage }
         let imageDimensions = image.getSize()
@@ -173,18 +190,12 @@ public class FilterPipeline : NSObject {
         }
         else {
             //calculate window
-            let windowRect = calculateCropRect(widerImageSize:imageDimensions, targetSize: targetSize)
+            let windowRect = CGRect(origin: CGPoint.zero, size: targetSize)
             //add crop
             return ciImage?.cropped(to: windowRect)
         }
     }
     
-    //Return the CGRect that is a window into the target size from the center
-    //
-    func calculateCropRect(widerImageSize:CGSize, targetSize:CGSize) -> CGRect {
-        let xOffset = (widerImageSize.width - targetSize.width)/2
-        return CGRect(x: xOffset, y: 0, width: targetSize.width, height: targetSize.height)
-    }
      
 }
 
