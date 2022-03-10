@@ -70,12 +70,12 @@
   [self handlePhotoCaptureResultWithError:error
                         photoDataProvider:^NSData * {
                         
-      if(self.filterpipeline){
-          NSData * photoData =  [self.filterpipeline filterAsPhoto:photo];
-          if (photoData) {
-              return photoData;
-          }
-      }
+//      if(self.filterpipeline){
+//          NSData * photoData =  [self.filterpipeline filterAsPhoto:photo];
+//          if (photoData) {
+//              return photoData;
+//          }
+//      }
        
       //return unfiltered data if no-filtering is available
       //or if filtered data is nil
