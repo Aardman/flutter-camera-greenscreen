@@ -72,7 +72,7 @@ public class FilterPipeline : NSObject {
     
     func chromaKeyFilter(range: HueRange) -> CIFilter? {
         CIFilter(name: "CIColorCube",
-                 parameters: ["inputCubeDimension": Constants.cubeSize,
+                 parameters: ["inputCubeDimension": FilterConstants.cubeSize,
                               "inputCubeData": ChromaCubeFactory().chromaCubeData(fromHue: range.0, toHue: range.1)])
     }
     
@@ -97,12 +97,21 @@ public class FilterPipeline : NSObject {
     //For filtering the still image
     //photo?.normalisedData() performs any input transform, eg: rotation
     public func filter(asPhoto photo: AVCapturePhoto?) -> NSData? {
-        guard let inputData =  photo?.cgImageRepresentation() else { return nil }
-        let inputImage = CIImage(cgImage: inputData)
-        if let background = backgroundCIImage {
-            scaledBackgroundCIImage = transformBackgroundToFit(backgroundCIImage: background, cameraImage: inputImage)
+        
+        var orientationMetadata:UInt32 = FilterConstants.defaultOrientationPortraitUp
+        if let orientationInt = photo?.metadata[String(kCGImagePropertyOrientation)] as? UInt32 {
+           //print("🍎  \(orientationInt)" )
+           orientationMetadata = orientationInt
         }
-        guard let filtered = applyFilters(inputImage: inputImage),
+    
+        guard let rawPhoto =  photo?.cgImageRepresentation() else { return nil }
+        let rawCIImage  = CIImage(cgImage: rawPhoto)
+        let cameraImage = rawCIImage.oriented(forExifOrientation: Int32(orientationMetadata))
+        
+        if let background = backgroundCIImage {
+            scaledBackgroundCIImage = transformBackgroundToFit(backgroundCIImage: background, cameraImage: cameraImage)
+        }
+        guard let filtered = applyFilters(inputImage: cameraImage),
               let colourspace = CGColorSpace(name:CGColorSpace.sRGB)
         else { return nil }
         guard
@@ -213,21 +222,21 @@ extension CIImage {
     }
     
     //debugging
-    func dumpToFile(){
-        //dump to app docs directory
-        let fileroot = UUID().uuidString
-       // let docDir
-    }
+//    func dumpToFile(){
+//        //dump to app docs directory
+//        let fileroot = UUID().uuidString
+//       // let docDir
+//    }
     
 }
 
-@available(iOS 11.0, *)
-extension AVCapturePhoto {
-    func normalisedData() -> Data? {
-        fileDataRepresentation()
-    }
-}
- 
+//@available(iOS 11.0, *)
+//extension AVCapturePhoto {
+//    func normalised() -> CGImage? {
+//        cgImageRepresentation()
+//    }
+//}
+
 
 
 
