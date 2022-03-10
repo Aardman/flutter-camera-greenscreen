@@ -548,8 +548,29 @@ class MethodChannelCamera extends CameraPlatform {
 
   @override
   Future<void> updateFilters() async {
-    await _channel.invokeMethod<void>('updateFilters');
+    var data = {
+      "filename": "demo_image.jpg", 
+    }; 
+    await _channel.invokeMethod<void>('updateFilters', data);
   }
 
+/*
+@override
+  Future<void> setFocusPoint(int cameraId, Point<double>? point) {
+    assert(point == null || point.x >= 0 && point.x <= 1);
+    assert(point == null || point.y >= 0 && point.y <= 1);
+
+    return _channel.invokeMethod<void>(
+      'setFocusPoint',
+      <String, dynamic>{
+        'cameraId': cameraId,
+        'reset': point == null,
+        'x': point?.x,
+        'y': point?.y,
+      },
+    );
+  } 
+
+  */
 
 }

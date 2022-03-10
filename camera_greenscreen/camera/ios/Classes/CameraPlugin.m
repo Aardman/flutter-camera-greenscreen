@@ -271,12 +271,15 @@
     }
     
     //Aardman_Animator
-    else if ([@"enableFilters" isEqualToString:call.method]) {
+    else if ([@"enableFilters"    isEqualToString:call.method]) {
         [_camera enableFiltersWithResult:result];
     } else if ([@"disableFilters" isEqualToString:call.method]) {
         [_camera disableFiltersWithResult:result];
+    } else if ([@"updateFilters"  isEqualToString:call.method]) {
+        NSLog(@"Data %@", call.arguments);
+       [_camera updateFiltersWithResult:result];
     }
-    
+       
       else {
       [result sendNotImplemented];
     }

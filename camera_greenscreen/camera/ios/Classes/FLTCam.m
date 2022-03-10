@@ -865,6 +865,11 @@ NSString *const errorMethod = @"error";
     self.chromakeyEnabled = false;
     [result sendSuccess];
 }
+ 
+- (void)updateFiltersWithResult:(FLTThreadSafeFlutterResult *)result{
+    NSLog(@"🍎🍎 Updating the filters");
+    [result sendSuccess];
+}
 
  
 
