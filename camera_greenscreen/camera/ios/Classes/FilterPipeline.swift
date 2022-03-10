@@ -97,8 +97,8 @@ public class FilterPipeline : NSObject {
     //For filtering the still image
     //photo?.normalisedData() performs any input transform, eg: rotation
     public func filter(asPhoto photo: AVCapturePhoto?) -> NSData? {
-        guard let inputData =  photo?.normalisedData(),
-              let inputImage = CIImage(data: inputData) else { return nil }
+        guard let inputData =  photo?.cgImageRepresentation() else { return nil }
+        let inputImage = CIImage(cgImage: inputData)
         if let background = backgroundCIImage {
             scaledBackgroundCIImage = transformBackgroundToFit(backgroundCIImage: background, cameraImage: inputImage)
         }
@@ -207,9 +207,18 @@ public class FilterPipeline : NSObject {
 //MARK: - Helper extensions
 
 extension CIImage {
+    
     func getSize() -> CGSize {
         return CGSize(width: extent.width, height:extent.height)
     }
+    
+    //debugging
+    func dumpToFile(){
+        //dump to app docs directory
+        let fileroot = UUID().uuidString
+       // let docDir
+    }
+    
 }
 
 @available(iOS 11.0, *)
