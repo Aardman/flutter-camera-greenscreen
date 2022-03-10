@@ -142,7 +142,7 @@ public class FilterPipeline : NSObject {
    //it has already been rotated to align with the input background
    func transformBackgroundToFit(backgroundCIImage:CIImage, cameraImage:CIImage) -> CIImage?  {
        let scaledImage = scaleImage(fromImage: backgroundCIImage, into: cameraImage.getSize())
-       let croppedImage = cropImage(ciImage: scaledImage, toSize: cameraImage.getSize())
+       let croppedImage = cropImage(ciImage: scaledImage, to: cameraImage.getSize())
        return croppedImage
    }
     
@@ -150,11 +150,11 @@ public class FilterPipeline : NSObject {
     func scaleImage(fromImage:CIImage, into targetDimensions:CGSize) -> CIImage? {
         let sourceDimensions = fromImage.getSize()
         let scale = calculateScale(input: sourceDimensions, toFitWithinHeightOf: targetDimensions)
-        guard let filter = CIFilter(name: "CILanczosScaleTransform") else { return nil }
-        filter.setValue(fromImage, forKey: kCIInputImageKey)
-        filter.setValue(scale,   forKey: kCIInputScaleKey)
-        filter.setValue(1.0,     forKey: kCIInputAspectRatioKey)
-        return filter.outputImage
+        guard let scaleFilter = CIFilter(name: "CILanczosScaleTransform") else { return nil }
+        scaleFilter.setValue(fromImage, forKey: kCIInputImageKey)
+        scaleFilter.setValue(scale,   forKey: kCIInputScaleKey)
+        scaleFilter.setValue(1.0,     forKey: kCIInputAspectRatioKey)
+        return scaleFilter.outputImage
     }
     
     //Scale to fit the height
@@ -164,11 +164,28 @@ public class FilterPipeline : NSObject {
         return  toFitWithinHeightOf.height / input.height
     }
     
-    func cropImage(ciImage: CIImage?, toSize:CGSize) -> CIImage? {
+    //Use CICrop to crop out from the center of the provided CIImage
+    func cropImage(ciImage: CIImage?, to targetSize:CGSize) -> CIImage? {
         guard let image = ciImage else { return ciImage }
-        return image
+        let imageDimensions = image.getSize()
+        if imageDimensions.width <= targetSize.width {
+            return ciImage
+        }
+        else {
+            //calculate window
+            let windowRect = calculateCropRect(widerImageSize:imageDimensions, targetSize: targetSize)
+            //add crop
+            return ciImage?.cropped(to: windowRect)
+        }
     }
     
+    //Return the CGRect that is a window into the target size from the center
+    //
+    func calculateCropRect(widerImageSize:CGSize, targetSize:CGSize) -> CGRect {
+        let xOffset = (widerImageSize.width - targetSize.width)/2
+        return CGRect(x: xOffset, y: 0, width: targetSize.width, height: targetSize.height)
+    }
+     
 }
 
 
