@@ -277,7 +277,9 @@
         [_camera disableFiltersWithResult:result];
     } else if ([@"updateFilters"  isEqualToString:call.method]) {
         NSLog(@"Data %@", call.arguments);
-       [_camera updateFiltersWithResult:result];
+        NSString * path  = ((NSString *)call.arguments[@"filename"]);
+        NSLog(@"Extracted Path %@", path);
+        [_camera updateFiltersWithResult:result];
     }
        
       else {

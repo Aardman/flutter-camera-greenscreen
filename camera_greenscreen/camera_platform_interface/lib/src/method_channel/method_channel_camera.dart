@@ -549,8 +549,15 @@ class MethodChannelCamera extends CameraPlatform {
   @override
   Future<void> updateFilters() async {
     var data = {
-      "filename": "demo_image.jpg", 
-    }; 
+      "filename": "demo_image.jpg",
+      "hueRange": [0.25, 0.45],
+      "polygon": [
+        [100, 100],
+        [400, 100],
+        [100, 480],
+        [400, 480]
+      ]
+    };
     await _channel.invokeMethod<void>('updateFilters', data);
   }
 
