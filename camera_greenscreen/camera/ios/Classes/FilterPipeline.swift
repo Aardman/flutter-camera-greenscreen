@@ -75,23 +75,30 @@ public class FilterPipeline : NSObject {
                               "inputCubeData": ChromaCubeFactory().chromaCubeData(fromHue: range.0, toHue: range.1)])
     }
     
+    
     @objc
-    //May need to lock pixel buffer
+    //No need to lock pixel buffer currently
     public func filter(_ buffer:CVPixelBuffer?) {
         guard let buf = buffer else { return  }
         let outputImage = CIImage(cvPixelBuffer: buf, options:[:])
         if let background = backgroundCIImage {
-            scaledBackgroundCIImage = scaleImage(ciImage: background, into: outputImage)
+            scaledBackgroundCIImage = transformBackgroundToFit(backgroundCIImage: background, cameraImage: outputImage)
         }
         guard let filtered = applyFilters(inputImage: outputImage) else { return }
         ciContext.render(filtered, to: buf)
     }
        
+    
     @objc
     @available(iOS 11.0, *)
+    //For filtering the still image
+    //photo?.normalisedData() performs any input transform, eg: rotation
     public func filter(asPhoto photo: AVCapturePhoto?) -> NSData? {
-        guard let inputData = photo?.fileDataRepresentation(),
+        guard let inputData =  photo?.normalisedData(),
               let inputImage = CIImage(data: inputData) else { return nil }
+        if let background = backgroundCIImage {
+            scaledBackgroundCIImage = transformBackgroundToFit(backgroundCIImage: background, cameraImage: inputImage)
+        }
         guard let filtered = applyFilters(inputImage: inputImage),
               let colourspace = CGColorSpace(name:CGColorSpace.sRGB)
         else { return nil }
@@ -100,8 +107,10 @@ public class FilterPipeline : NSObject {
         else { return nil }
         return data as NSData?
     }
- 
     
+    
+    /// Filters and transforms for the input image which must be correctly rotated
+    /// prior to application of filters
     func applyFilters(inputImage camImage: CIImage) -> CIImage? {
          
         if scaledBackgroundCIImage == nil {
@@ -125,24 +134,59 @@ public class FilterPipeline : NSObject {
  
         return compositedCIImage
     }
+      
+    
+    //MARK:- Handling background
+    
+   //Camera image is a correctly oriented CI image from the camera, ie: if an AVPhotoResponse
+   //it has already been rotated to align with the input background
+   func transformBackgroundToFit(backgroundCIImage:CIImage, cameraImage:CIImage) -> CIImage?  {
+       let scaledImage = scaleImage(fromImage: backgroundCIImage, into: cameraImage.getSize())
+       let croppedImage = cropImage(ciImage: scaledImage, toSize: cameraImage.getSize())
+       return croppedImage
+   }
     
     /// - into image is only provided for calculating the  desired size of the scaled output
-    func scaleImage(ciImage:CIImage, into image:CIImage) -> CIImage? {
-        let scale = calculateScale(input: ciImage, output: image)
+    func scaleImage(fromImage:CIImage, into targetDimensions:CGSize) -> CIImage? {
+        let sourceDimensions = fromImage.getSize()
+        let scale = calculateScale(input: sourceDimensions, toFitWithinHeightOf: targetDimensions)
         guard let filter = CIFilter(name: "CILanczosScaleTransform") else { return nil }
-        filter.setValue(ciImage, forKey: kCIInputImageKey)
+        filter.setValue(fromImage, forKey: kCIInputImageKey)
         filter.setValue(scale,   forKey: kCIInputScaleKey)
         filter.setValue(1.0,     forKey: kCIInputAspectRatioKey)
         return filter.outputImage
     }
     
-    func calculateScale(input: CIImage, output: CIImage) -> CGFloat {
-        return 0.6
+    //Scale to fit the height
+    //We will allow the background to misalign with the center at this point. We may need
+    //a CIAffineTransform step for that if width input <> output.
+    func calculateScale(input: CGSize, toFitWithinHeightOf: CGSize) -> CGFloat {
+        return  toFitWithinHeightOf.height / input.height
     }
     
+    func cropImage(ciImage: CIImage?, toSize:CGSize) -> CIImage? {
+        guard let image = ciImage else { return ciImage }
+        return image
+    }
     
 }
 
+
+//Helper extensions
+
+extension CIImage {
+    func getSize() -> CGSize {
+        return CGSize(width: extent.width, height:extent.height)
+    }
+}
+
+
+@available(iOS 11.0, *)
+extension AVCapturePhoto {
+    func normalisedData() -> Data? {
+        fileDataRepresentation()
+    }
+}
  
 
 
