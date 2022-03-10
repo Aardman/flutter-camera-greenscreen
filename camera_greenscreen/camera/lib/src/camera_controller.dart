@@ -876,7 +876,6 @@ class CameraController extends ValueNotifier<CameraValue> {
 
   // Disables Chromakeying
   Future<void> updateFilters() async {
-    await CameraPlatform.instance.enableFilters();
-    print("Implement update filters in the FLTCam platform instance");
+    await CameraPlatform.instance.updateFilters(); 
   }
 }

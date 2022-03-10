@@ -574,6 +574,11 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
             color: Colors.grey,
             onPressed:
                 cameraController == null ? null : onChromakeyDisablePressed),
+        IconButton(
+            icon: const Icon(Icons.palette),
+            color: Colors.grey,
+            onPressed:
+                cameraController == null ? null : onUpdateFiltersPressed),
       ],
     );
   }
@@ -604,6 +609,23 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
     }
 
     await cameraController.disableFilters();
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+//Aardman-animator - basic demonstration of API for sending filter data
+
+  Future<void> onUpdateFiltersPressed() async {
+    final CameraController? cameraController = controller;
+
+    if (cameraController == null || !cameraController.value.isInitialized) {
+      showInSnackBar('Error: select a camera first.');
+      return;
+    }
+
+    await cameraController.updateFilters();
 
     if (mounted) {
       setState(() {});

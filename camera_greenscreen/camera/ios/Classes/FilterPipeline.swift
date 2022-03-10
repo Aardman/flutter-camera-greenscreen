@@ -100,7 +100,6 @@ public class FilterPipeline : NSObject {
         
         var orientationMetadata:UInt32 = FilterConstants.defaultOrientationPortraitUp
         if let orientationInt = photo?.metadata[String(kCGImagePropertyOrientation)] as? UInt32 {
-           //print("🍎  \(orientationInt)" )
            orientationMetadata = orientationInt
         }
     

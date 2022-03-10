@@ -84,6 +84,8 @@ NS_ASSUME_NONNULL_BEGIN
 //Aardman_Animator
 - (void)enableFiltersWithResult:(FLTThreadSafeFlutterResult *)result;
 - (void)disableFiltersWithResult:(FLTThreadSafeFlutterResult *)result;
+- (void)updateFiltersWithResult:(FLTThreadSafeFlutterResult *)result;
+
 
 @end
 
