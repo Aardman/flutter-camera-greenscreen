@@ -1116,7 +1116,20 @@ class Camera
     }
   }
 
-  public void close() {
+ //Aardman-animator 
+ public void enableFilters() {
+    System.out.println("🤖 enableFiltersPressed"); 
+ }
+
+ public void disableFilters() {
+  System.out.println("🤖 disableFiltersPressed"); 
+ }
+
+ public void updateFilters(Object arguments) {
+  System.out.println("🤖 updateFiltersPressed\n" + arguments); 
+ }
+
+ public void close() {
     Log.i(TAG, "close");
     closeCaptureSession();
 

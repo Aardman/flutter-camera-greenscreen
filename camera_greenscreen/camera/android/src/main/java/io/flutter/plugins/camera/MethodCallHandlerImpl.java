@@ -358,11 +358,51 @@ final class MethodCallHandlerImpl implements MethodChannel.MethodCallHandler {
           result.success(null);
           break;
         }
+//Aardman-animator 
+      case "enableFilters":
+      {
+        camera.enableFilters();
+        result.success(null);
+        break;
+      }
+      case "disableFilters":
+      {
+        camera.disableFilters();
+        result.success(null);
+        break;
+      }
+      case "updateFilters":
+      {
+        camera.updateFilters(call.arguments);
+        result.success(null);
+        break;
+      } 
       default:
         result.notImplemented();
         break;
     }
   }
+
+/*
+    case "setFocusPoint":
+        {
+          Boolean reset = call.argument("reset");
+          Double x = null;
+          Double y = null;
+          if (reset == null || !reset) {
+            x = call.argument("x");
+            y = call.argument("y");
+          }
+          try {
+            camera.setFocusPoint(result, new Point(x, y));
+          } catch (Exception e) {
+            handleException(e, result);
+          }
+          break;
+        }
+  */
+
+
 
   void stopListening() {
     methodChannel.setMethodCallHandler(null);
