@@ -875,7 +875,7 @@ class CameraController extends ValueNotifier<CameraValue> {
   }
 
   // Disables Chromakeying
-  Future<void> updateFilters() async {
-    await CameraPlatform.instance.updateFilters(); 
+  Future<void> updateFilters(Map data) async {
+    await CameraPlatform.instance.updateFilters(data);
   }
 }

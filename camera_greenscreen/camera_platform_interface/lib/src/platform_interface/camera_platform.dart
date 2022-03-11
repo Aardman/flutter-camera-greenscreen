@@ -270,7 +270,7 @@ abstract class CameraPlatform extends PlatformInterface {
   }
 
    /// Changes parameters for filters, eg: background  path and hue
-  Future<void> updateFilters() {
+  Future<void> updateFilters(Map data) {
     throw UnimplementedError('updateFilters() is not implemented.');
   }
 }

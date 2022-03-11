@@ -625,7 +625,18 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
       return;
     }
 
-    await cameraController.updateFilters();
+    var data = {
+      "filename": "demo_image.jpg",
+      "hueRange": [0.25, 0.45],
+      "polygon": [
+        [100, 100],
+        [400, 100],
+        [100, 480],
+        [400, 480]
+      ]
+    };
+
+    await cameraController.updateFilters(data);
 
     if (mounted) {
       setState(() {});
