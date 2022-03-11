@@ -47,6 +47,8 @@ public class FilterPipeline : NSObject {
         super.init()
         setupCoreImage()
         self.filterParameters = filterParameters
+        //TODO: remove before release
+        saveSampleBackgroundToDocs()
         //explicit init on initialisation, for default values
         updateChangedFilters(filterParameters)
     }
@@ -55,6 +57,12 @@ public class FilterPipeline : NSObject {
     ///using using the alternative constructor for CIContext
     func setupCoreImage(){
         ciContext = CIContext()
+    }
+    
+    func saveSampleBackgroundToDocs(){
+        if let backgroundImage = UIImage(named: "demo_background") {
+            FileManager.default.save(filename: "demo_background.jpg", image: backgroundImage)
+        }
     }
     
     //MARK:  - Filter init and update
@@ -72,17 +80,17 @@ public class FilterPipeline : NSObject {
         }
     }
     
-    func  updateBackground(_ filename: String){
-        print("🌆 Background Updated \(filename)")
-        if let backgroundImage = UIImage(named: filename) {
+    func  updateBackground(_ path: String){
+        print("🌆 Background Updated \(path)")
+        if let backgroundImage = UIImage(contentsOfFile:  path) {
             backgroundCIImage = CIImage(image: backgroundImage)
         }
         //else load demo asset if available
-        else {
-            if let backgroundImage = UIImage(named: "demo_background") {
-                backgroundCIImage = CIImage(image:backgroundImage)
-            }
-        }
+//        else {
+//            if let backgroundImage = UIImage(named: "demo_background") {
+//                backgroundCIImage = CIImage(image:backgroundImage)
+//            }
+//        }
     }
     
     func updateChromaCube(_ hueRange:HueRange){
@@ -241,3 +249,28 @@ extension CIImage {
         return CGSize(width: extent.width, height:extent.height)
     }
 }
+
+extension FileManager {
+    
+    func applicationDocumentsDirectory () -> String {
+        let resultArray = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory ,FileManager.SearchPathDomainMask.userDomainMask, true)
+        let root = resultArray[0]
+        return "\(root)"
+    }
+    
+    func save(filename:String, image: UIImage){
+        let path = "\(applicationDocumentsDirectory())/\(filename)"
+        let fileUrl = URL(fileURLWithPath: path)
+        var sourceData:Data? = image.jpegData(compressionQuality: 1.0)
+          do {
+              try sourceData?.write(to: fileUrl)
+          }
+          catch {
+              print("Failed to write \(path)")
+              sourceData = nil
+          }
+          sourceData = nil
+    }
+    
+}
+
