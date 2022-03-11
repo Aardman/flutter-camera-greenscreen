@@ -11,6 +11,10 @@ import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as Path;
+
+String fileName = Path.join('/storage/emulated/0/', '/MyFolder/file.txt');
 
 class CameraExampleHome extends StatefulWidget {
   @override
@@ -625,15 +629,14 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
       return;
     }
 
+    //get the application documents directory for the app -
+    Directory appDocDir = await getApplicationDocumentsDirectory();
+    String appDocPath = appDocDir.path;
+    String fullyQualifiedPath = Path.join(appDocPath, "demo_background.jpg");
+
     var data = {
-      "backgroundPath": "fully qualified path",
-      "hueRange": [0.25, 0.45],
-      "polygon": [
-        [100, 100],
-        [400, 100],
-        [100, 480],
-        [400, 480]
-      ]
+      "backgroundPath": fullyQualifiedPath,
+      "hueRange": [0.35, 0.65]
     };
 
     await cameraController.updateFilters(data);

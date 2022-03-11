@@ -864,12 +864,12 @@ class CameraController extends ValueNotifier<CameraValue> {
 
 //Aardman-animator
 
-  // // Enables Chromakeying
+  // Enables Chromakeying
   Future<void> enableFilters() async {
     await CameraPlatform.instance.enableFilters();
   }
 
-  // // Disables Chromakeying
+  // Disables Chromakeying
   Future<void> disableFilters() async {
     await CameraPlatform.instance.disableFilters();
   }
@@ -878,4 +878,5 @@ class CameraController extends ValueNotifier<CameraValue> {
   Future<void> updateFilters(Map data) async {
     await CameraPlatform.instance.updateFilters(data);
   }
+  
 }
