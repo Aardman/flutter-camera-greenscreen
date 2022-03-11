@@ -12,7 +12,7 @@ typealias HueRange   = (Double, Double)
 typealias MaskBounds = Array<CGPoint>
 
 enum FilterParamNames: String {
-    case filename
+    case backgroundPath
     case hueRange
     case polygon
 }
@@ -43,7 +43,7 @@ public class FilterParameters: NSObject {
     
    @objc
    public init(dictionary: Dictionary<String,AnyObject>){
-        if let filename = dictionary[FilterParamNames.filename.rawValue] as? String {
+        if let filename = dictionary[FilterParamNames.backgroundPath.rawValue] as? String {
             backgroundImage = filename
         }
         if let hueRange = dictionary[FilterParamNames.hueRange.rawValue] as? [NSNumber],

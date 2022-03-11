@@ -626,7 +626,7 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
     }
 
     var data = {
-      "filename": "demo_image.jpg",
+      "backgroundPath": "fully qualified path",
       "hueRange": [0.25, 0.45],
       "polygon": [
         [100, 100],
