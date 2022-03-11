@@ -866,11 +866,13 @@ NSString *const errorMethod = @"error";
     [result sendSuccess];
 }
  
-- (void)updateFiltersWithResult:(FLTThreadSafeFlutterResult *)result{
-    NSLog(@"🍎🍎 Updating the filters");
+- (void)updateFiltersWithResult:(FLTThreadSafeFlutterResult *)result with:(NSDictionary *) params {
+    FilterParameters * newParams = [[FilterParameters alloc] initWithDictionary:params];
+    if(_filterPipeline){
+        self.filterPipeline.filterParameters = newParams;
+    }
     [result sendSuccess];
-}
-
+} 
  
 
 - (CGPoint)getCGPointForCoordsWithOrientation:(UIDeviceOrientation)orientation

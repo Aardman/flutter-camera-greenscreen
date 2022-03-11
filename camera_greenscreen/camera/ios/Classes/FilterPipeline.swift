@@ -16,9 +16,17 @@ public class FilterPipeline : NSObject {
     var ciContext : CIContext!
       
     //Filters
-    @objc public var filterParameters:FilterParameters = FilterParameters() {
-         didSet {
-             updateFilters()
+    //This could simply be a Dictionary, but then we'd need to convert any structured values
+    //whenever using them, this way we only perform such structure transforms in the constructor
+    //of FilterParameters
+    @objc public var filterParameters:FilterParameters? {
+         willSet {
+             //update the pipeline with whichever values are provided
+             updateChangedFilters(newValue)
+             //copy any new values
+             if newValue?.backgroundImage == nil { newValue?.backgroundImage = filterParameters?.backgroundImage }
+             if newValue?.chromaKeyRange  == nil { newValue?.chromaKeyRange = filterParameters?.chromaKeyRange }
+             if newValue?.maskBounds      == nil { newValue?.maskBounds = filterParameters?.maskBounds }
          }
     }
      
@@ -37,45 +45,60 @@ public class FilterPipeline : NSObject {
     @objc
     public init(filterParameters:FilterParameters){
         super.init()
-        ///background image
-        if let backgroundImage = UIImage(named: filterParameters.backgroundImage) {
-           backgroundCIImage = CIImage(image: backgroundImage)
-        }
-        //else load demo asset
-        else {
-            if let backgroundImage = UIImage(named: "demo_background") {
-                backgroundCIImage = CIImage(image:backgroundImage)
-            }
-        }
-        //one time init
         setupCoreImage()
-        //filter stack
-        chromaFilter = chromaKeyFilter(range: self.filterParameters.chromaKeyRange)
+        self.filterParameters = filterParameters
+        //explicit init on initialisation, for default values
+        updateChangedFilters(filterParameters)
     }
-      
+    
     ///The default hw device will be selected, currently a MTLDevice, no need to explicitly add
     ///using using the alternative constructor for CIContext
     func setupCoreImage(){
         ciContext = CIContext()
     }
     
-    
-    //MARK:  - Filter init
-    
-    func updateFilters() {
-        if let backgroundImage = UIImage(named: filterParameters.backgroundImage) {
-           backgroundCIImage = CIImage(image: backgroundImage)
+    //MARK:  - Filter init and update
+  
+    func updateChangedFilters(_ newValue:FilterParameters?){
+        guard let newParams = newValue else { return }
+        if let backgroundFilename = newParams.backgroundImage {
+            updateBackground(backgroundFilename)
         }
-        chromaFilter = chromaKeyFilter(range: self.filterParameters.chromaKeyRange)
+        if let hueRange = newParams.chromaKeyRange {
+            updateChromaCube(hueRange)
+        }
+        if let maskBounds = newParams.maskBounds {
+            updateMaskBounds(maskBounds)
+        }
     }
     
+    func  updateBackground(_ filename: String){
+        print("🌆 Background Updated \(filename)")
+        if let backgroundImage = UIImage(named: filename) {
+            backgroundCIImage = CIImage(image: backgroundImage)
+        }
+        //else load demo asset if available
+        else {
+            if let backgroundImage = UIImage(named: "demo_background") {
+                backgroundCIImage = CIImage(image:backgroundImage)
+            }
+        }
+    }
+    
+    func updateChromaCube(_ hueRange:HueRange){
+        print("🎨 Chroma Updated \(hueRange)")
+        chromaFilter = chromaKeyFilter(range: hueRange)
+    }
+    
+    func updateMaskBounds(_ bounds:MaskBounds){
+        print("🍎 Mask Bounds Updated \(bounds)")
+    }
     
     func chromaKeyFilter(range: HueRange) -> CIFilter? {
         CIFilter(name: "CIColorCube",
                  parameters: ["inputCubeDimension": FilterConstants.cubeSize,
                               "inputCubeData": ChromaCubeFactory().chromaCubeData(fromHue: range.0, toHue: range.1)])
     }
-    
     
     //MARK: - Objc API
     
@@ -211,31 +234,10 @@ public class FilterPipeline : NSObject {
      
 }
 
-
 //MARK: - Helper extensions
 
 extension CIImage {
-    
     func getSize() -> CGSize {
         return CGSize(width: extent.width, height:extent.height)
     }
-    
-    //debugging
-//    func dumpToFile(){
-//        //dump to app docs directory
-//        let fileroot = UUID().uuidString
-//       // let docDir
-//    }
-    
 }
-
-//@available(iOS 11.0, *)
-//extension AVCapturePhoto {
-//    func normalised() -> CGImage? {
-//        cgImageRepresentation()
-//    }
-//}
-
-
-
-
