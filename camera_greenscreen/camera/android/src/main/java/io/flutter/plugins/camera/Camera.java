@@ -1138,8 +1138,9 @@ class Camera
     System.out.println("🤖 disableFiltersPressed");
   }
 
-  public void updateFilters(Object arguments) {
-    System.out.println("🤖 updateFiltersPressed\n" + arguments);
+ public void updateFilters(Object arguments) {
+   HashMap map = (HashMap) arguments;
+   this.filterParameters.update(map);
   }
 
   public void close() {
