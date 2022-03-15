@@ -4,6 +4,7 @@
 
 package io.flutter.plugins.camera;
 
+import jp.co.cyberagent.android.gpuimage.GPUImage;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -74,10 +75,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
+
+//import io.flutter.plugins.camera.FilterParameters;
+
 @FunctionalInterface
 interface ErrorCallback {
   void onError(String errorCode, String errorMessage);
 }
+
 
 class Camera
     implements CameraCaptureCallback.CameraCaptureStateListener,
@@ -136,6 +141,11 @@ class Camera
 
   private MethodChannel.Result flutterResult;
 
+  //Aardman-Animator
+  private FilterPipeline filterPipeline;
+  FilterParameters filterParameters;
+  GPUImage gpuImage;
+
   public Camera(
       final Activity activity,
       final SurfaceTextureEntry flutterTexture,
@@ -163,6 +173,9 @@ class Camera
     captureTimeouts = new CaptureTimeoutsWrapper(3000, 3000);
     captureProps = new CameraCaptureProperties();
     cameraCaptureCallback = CameraCaptureCallback.create(this, captureTimeouts, captureProps);
+
+    filterParameters = new FilterParameters();
+    filterPipeline = new FilterPipeline();
 
     startBackgroundThread();
   }
