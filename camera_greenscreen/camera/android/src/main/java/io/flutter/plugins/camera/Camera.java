@@ -1139,7 +1139,8 @@ class Camera
  }
 
  public void updateFilters(Object arguments) {
-  System.out.println("🤖 updateFiltersPressed\n" + arguments); 
+   HashMap map = (HashMap) arguments;
+   this.filterParameters.update(map);
  }
 
  public void close() {
