@@ -39,7 +39,7 @@ public final class FilterParameters {
             this.highValue = highValue;
         }
 
-        public Double getHue(){
+        Double getHue() {
             return lowValue;
         }
 
