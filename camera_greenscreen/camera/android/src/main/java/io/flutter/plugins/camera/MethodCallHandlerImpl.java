@@ -358,6 +358,25 @@ final class MethodCallHandlerImpl implements MethodChannel.MethodCallHandler {
           result.success(null);
           break;
         }
+        //Aardman-animator
+      case "enableFilters":
+      {
+        camera.enableFilters();
+        result.success(null);
+        break;
+      }
+      case "disableFilters":
+      {
+        camera.disableFilters();
+        result.success(null);
+        break;
+      }
+      case "updateFilters":
+      {
+        camera.updateFilters(call.arguments);
+        result.success(null);
+        break;
+      }
       default:
         result.notImplemented();
         break;
