@@ -22,9 +22,11 @@ public final class FilterParameters {
         System.out.println("🤖 updating filter parameters with\n" + arguments);
         String bg = (String) arguments.get("backGroundImage");
         if (bg != null) { this.backgroundImage = bg; }
-        ArrayList<Double> hueRange = (ArrayList<Double>) arguments.get("hueRange");
+        ArrayList hueRange =  (ArrayList) arguments.get("hueRange");
+        Double low = (Double) hueRange.get(0);
+        Double high = (Double) hueRange.get(1);
         if (hueRange != null) {
-            this.chromaKeyRange = new HueRange(hueRange.get(0), hueRange.get(1));
+            this.chromaKeyRange = new HueRange(low, high);
         }
      }
 
