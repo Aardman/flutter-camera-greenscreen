@@ -75,8 +75,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
-
-//import io.flutter.plugins.camera.FilterParameters;
+import io.flutter.plugins.camera.FilterController;
 
 @FunctionalInterface
 interface ErrorCallback {
@@ -142,8 +141,7 @@ class Camera
   private MethodChannel.Result flutterResult;
 
   //Aardman-Animator
-  private FilterPipeline filterPipeline;
-  FilterParameters filterParameters;
+  private FilterController filterCaptureController;
   GPUImage gpuImage;
 
   public Camera(
@@ -174,8 +172,7 @@ class Camera
     captureProps = new CameraCaptureProperties();
     cameraCaptureCallback = CameraCaptureCallback.create(this, captureTimeouts, captureProps);
 
-    filterParameters = new FilterParameters();
-    filterPipeline = new FilterPipeline();
+    this.filterCaptureController = new FilterController();
 
     startBackgroundThread();
   }
@@ -1140,7 +1137,7 @@ class Camera
 
  public void updateFilters(Object arguments) {
    HashMap map = (HashMap) arguments;
-   this.filterParameters.update(map);
+   this.filterCaptureController.updateParameters(map);
  }
 
  public void close() {
