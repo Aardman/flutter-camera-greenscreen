@@ -11,8 +11,9 @@ import java.util.HashMap;
 
 public final class FilterParameters {
 
-    HueRange chromaKeyRange;
-    String   backgroundImage;
+    HueRange chromaKeyRange = new HueRange(0.25, 0.45);
+    Double sensitivity = 1.0;
+    String   backgroundImage = null;
     // ArrayList maskBounds ;
 
     public FilterParameters() {}
@@ -32,7 +33,7 @@ public final class FilterParameters {
  class HueRange {
 
         private Double lowValue;
-        private Double highValue;
+        private Double highValue = 0.0;  //may not be used depending on filter choice
 
         HueRange(Double lowValue, Double highValue){
             this.lowValue = lowValue;
