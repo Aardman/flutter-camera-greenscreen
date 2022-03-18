@@ -6,8 +6,7 @@ package io.flutter.plugins.camera;
 
 import android.app.Activity;
 import android.hardware.camera2.CameraAccessException;
-import android.os.Handler;
-import android.os.Looper;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
@@ -17,15 +16,11 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugins.camera.CameraPermissions.PermissionsRegistry;
-import io.flutter.plugins.camera.features.CameraFeatureFactoryImpl;
 import io.flutter.plugins.camera.features.Point;
 import io.flutter.plugins.camera.features.autofocus.FocusMode;
 import io.flutter.plugins.camera.features.exposurelock.ExposureMode;
 import io.flutter.plugins.camera.features.flash.FlashMode;
-import io.flutter.plugins.camera.features.resolution.ResolutionPreset;
 import io.flutter.view.TextureRegistry;
-import java.util.HashMap;
-import java.util.Map;
 
 final class MethodCallHandlerImpl implements MethodChannel.MethodCallHandler {
   private final Activity activity;
@@ -36,6 +31,7 @@ final class MethodCallHandlerImpl implements MethodChannel.MethodCallHandler {
   private final MethodChannel methodChannel;
   private final EventChannel imageStreamChannel;
   private @Nullable Camera camera;
+  private final CameraPipelineLoader cameraPipelineLoader;
 
   MethodCallHandlerImpl(
       Activity activity,
@@ -52,6 +48,7 @@ final class MethodCallHandlerImpl implements MethodChannel.MethodCallHandler {
     methodChannel = new MethodChannel(messenger, "plugins.flutter.io/camera");
     imageStreamChannel = new EventChannel(messenger, "plugins.flutter.io/camera/imageStream");
     methodChannel.setMethodCallHandler(this);
+    cameraPipelineLoader = new CameraPipelineLoader(this.textureRegistry, this.messenger, this.activity);
   }
 
   @Override
@@ -77,7 +74,7 @@ final class MethodCallHandlerImpl implements MethodChannel.MethodCallHandler {
               (String errCode, String errDesc) -> {
                 if (errCode == null) {
                   try {
-                    instantiateCamera(call, result);
+                    camera = this.cameraPipelineLoader.instantiateCameraPipeline(call, result);
                   } catch (Exception e) {
                     handleException(e, result);
                   }
@@ -385,35 +382,6 @@ final class MethodCallHandlerImpl implements MethodChannel.MethodCallHandler {
 
   void stopListening() {
     methodChannel.setMethodCallHandler(null);
-  }
-
-  private void instantiateCamera(MethodCall call, Result result) throws CameraAccessException {
-    String cameraName = call.argument("cameraName");
-    String preset = call.argument("resolutionPreset");
-    boolean enableAudio = call.argument("enableAudio");
-
-    TextureRegistry.SurfaceTextureEntry flutterSurfaceTexture =
-        textureRegistry.createSurfaceTexture();
-    DartMessenger dartMessenger =
-        new DartMessenger(
-            messenger, flutterSurfaceTexture.id(), new Handler(Looper.getMainLooper()));
-    CameraProperties cameraProperties =
-        new CameraPropertiesImpl(cameraName, CameraUtils.getCameraManager(activity));
-    ResolutionPreset resolutionPreset = ResolutionPreset.valueOf(preset);
-
-    camera =
-        new Camera(
-            activity,
-            flutterSurfaceTexture,
-            new CameraFeatureFactoryImpl(),
-            dartMessenger,
-            cameraProperties,
-            resolutionPreset,
-            enableAudio);
-
-    Map<String, Object> reply = new HashMap<>();
-    reply.put("cameraId", flutterSurfaceTexture.id());
-    result.success(reply);
   }
 
   // We move catching CameraAccessException out of onMethodCall because it causes a crash
