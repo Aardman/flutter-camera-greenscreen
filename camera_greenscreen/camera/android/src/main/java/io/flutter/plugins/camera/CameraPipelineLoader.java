@@ -17,12 +17,7 @@ import java.util.Map;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugins.camera.Camera;
-import io.flutter.plugins.camera.CameraProperties;
-import io.flutter.plugins.camera.CameraPropertiesImpl;
-import io.flutter.plugins.camera.CameraUtils;
-import io.flutter.plugins.camera.DartMessenger;
-import io.flutter.plugins.camera.aardman.FilterCameraController;
+import io.flutter.plugins.camera.aardman.CameraController;
 import io.flutter.plugins.camera.features.CameraFeatureFactoryImpl;
 import io.flutter.plugins.camera.features.resolution.ResolutionPreset;
 import io.flutter.view.TextureRegistry;
@@ -68,8 +63,9 @@ public class CameraPipelineLoader {
 
     /*
      *  ImageReader will be the source of the registered texture.
-     *  Let's start by ust adding an additional one.
+     *  Let's start by adding an additional one.
      *
+     *  Uncertain where this is to be performed.
      */
     private void registerNewTextureEntry(SurfaceTexture surfaceTexture){
         textureRegistry.registerSurfaceTexture(surfaceTexture);
@@ -114,7 +110,7 @@ public class CameraPipelineLoader {
         return camera;
     }
 
-    public FilterCameraController instantiateFilterCameraPipeline(MethodCall call, MethodChannel.Result result) throws CameraAccessException {
+    public CameraController instantiateFilterCameraPipeline(MethodCall call, MethodChannel.Result result) throws CameraAccessException {
         String cameraName = call.argument("cameraName");
         String preset = call.argument("resolutionPreset");
         boolean enableAudio = call.argument("enableAudio");
@@ -128,8 +124,8 @@ public class CameraPipelineLoader {
                 new CameraPropertiesImpl(cameraName, CameraUtils.getCameraManager(activity));
         ResolutionPreset resolutionPreset = ResolutionPreset.valueOf(preset);
 
-        FilterCameraController camera =
-                new FilterCameraController(
+        CameraController camera =
+                new CameraController(
                         flutterSurfaceTexture,
                         dartMessenger,
                         cameraProperties,

@@ -5,7 +5,6 @@ import android.os.HandlerThread;
 
 import io.flutter.plugins.camera.CameraProperties;
 import io.flutter.plugins.camera.DartMessenger;
-import io.flutter.plugins.camera.features.CameraFeatureFactory;
 import io.flutter.plugins.camera.features.resolution.ResolutionPreset;
 import io.flutter.view.TextureRegistry;
 
@@ -17,9 +16,9 @@ import io.flutter.view.TextureRegistry;
  *
  * Initial scope, setup and run a camera preview
  */
-public class FilterCameraController {
+public class CameraController extends CameraControllerAPI {
 
-    private static final String TAG = "FilterCameraController";
+    private static final String  TAG = "FilterCameraController";
 
     /**
      * Input dependencies - inject all required dependencies in constructor
@@ -37,7 +36,7 @@ public class FilterCameraController {
     /** An additional thread for running tasks that shouldn't block the UI. */
     private HandlerThread backgroundHandlerThread;
 
-    public FilterCameraController(
+    public CameraController(
             final TextureRegistry.SurfaceTextureEntry flutterTexture,
             final DartMessenger dartMessenger,
             final CameraProperties cameraProperties,
@@ -49,7 +48,12 @@ public class FilterCameraController {
         this.resolutionPreset = resolutionPreset;
     }
 
-
+    /**
+     * Friday target
+     *
+     * Add GPU rendering as per sample code
+     * via a FilterGPUCamera
+     */
 
 
 }
