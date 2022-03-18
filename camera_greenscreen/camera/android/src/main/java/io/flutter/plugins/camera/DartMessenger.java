@@ -63,7 +63,7 @@ public class DartMessenger {
    *     handler managing the main thread since communication with Flutter should always happen on
    *     the main thread. The handler is mainly supplied so it will be easier test this class.
    */
-  DartMessenger(BinaryMessenger messenger, long cameraId, @NonNull Handler handler) {
+  public DartMessenger(BinaryMessenger messenger, long cameraId, @NonNull Handler handler) {
     cameraChannel = new MethodChannel(messenger, "flutter.io/cameraPlugin/camera" + cameraId);
     deviceChannel = new MethodChannel(messenger, "flutter.io/cameraPlugin/device");
     this.handler = handler;

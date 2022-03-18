@@ -1,10 +1,7 @@
-package io.flutter.plugins.camera;
+package io.flutter.plugins.camera.aardman;
 
-import android.graphics.SurfaceTexture;
 import android.media.ImageReader;
-import android.view.Surface;
 
-import java.io.FileReader;
 import java.util.HashMap;
 
 /**

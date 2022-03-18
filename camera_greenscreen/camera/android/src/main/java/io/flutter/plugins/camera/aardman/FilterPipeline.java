@@ -1,4 +1,4 @@
-package io.flutter.plugins.camera;
+package io.flutter.plugins.camera.aardman;
 
 import jp.co.cyberagent.android.gpuimage.GPUImage;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;

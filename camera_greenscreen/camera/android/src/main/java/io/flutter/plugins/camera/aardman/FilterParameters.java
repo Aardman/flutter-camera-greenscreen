@@ -1,4 +1,4 @@
-package io.flutter.plugins.camera;
+package io.flutter.plugins.camera.aardman;
 
 
 import androidx.annotation.NonNull;

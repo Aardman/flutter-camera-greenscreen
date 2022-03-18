@@ -27,7 +27,7 @@ public final class CameraUtils {
    * @param context The context to get the {@link CameraManager} singleton from.
    * @return The {@link CameraManager} singleton.
    */
-  static CameraManager getCameraManager(Context context) {
+  public static CameraManager getCameraManager(Context context) {
     return (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
   }
 

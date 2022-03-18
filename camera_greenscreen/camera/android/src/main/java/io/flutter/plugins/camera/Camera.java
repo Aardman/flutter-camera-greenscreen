@@ -75,7 +75,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
-import io.flutter.plugins.camera.FilterController;
+import io.flutter.plugins.camera.aardman.FilterController;
 
 @FunctionalInterface
 interface ErrorCallback {
@@ -83,7 +83,7 @@ interface ErrorCallback {
 }
 
 
-class Camera
+public class Camera
     implements CameraCaptureCallback.CameraCaptureStateListener,
         ImageReader.OnImageAvailableListener {
   private static final String TAG = "Camera";
