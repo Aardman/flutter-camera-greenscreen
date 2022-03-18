@@ -1,4 +1,4 @@
-package io.flutter.plugins.camera.aardman;
+package io.flutter.plugins.camera;
 
 import android.app.Activity;
 import android.graphics.ImageFormat;
@@ -22,6 +22,7 @@ import io.flutter.plugins.camera.CameraProperties;
 import io.flutter.plugins.camera.CameraPropertiesImpl;
 import io.flutter.plugins.camera.CameraUtils;
 import io.flutter.plugins.camera.DartMessenger;
+import io.flutter.plugins.camera.aardman.FilterCameraController;
 import io.flutter.plugins.camera.features.CameraFeatureFactoryImpl;
 import io.flutter.plugins.camera.features.resolution.ResolutionPreset;
 import io.flutter.view.TextureRegistry;
