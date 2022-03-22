@@ -1079,10 +1079,12 @@ public class Camera
     /** Aardman-Animator */
     FilterCameraConfigurations cameraConfigurations = new FilterCameraConfigurations(cameraDevice,cameraProperties,cameraFeatures);
 
-    startCaptureWithFiltering(this.filterCaptureController,
+
+    startCaptureWithFiltering(
+            this.filterCaptureController,
             this.previewRequestBuilder,
             cameraConfigurations,
-            onSuccessCallback,
+            null,
             this.dartMessenger);
   }
 
@@ -1120,15 +1122,14 @@ public class Camera
    * @param filterPipelineController
    * @param captureRequestBuilder
    * @param filterCameraConfigurations
-   * @param onSuccessCallback
+   * @param onSuccessCallback - null in Flutter plugin implementation
    * @throws CameraAccessException
    */
   public void startCaptureWithFiltering(FilterPipelineController filterPipelineController,
                                            CaptureRequest.Builder captureRequestBuilder,
                                            FilterCameraConfigurations filterCameraConfigurations,
-                                           Runnable onSuccessCallback,
-                                           DartMessenger messenger,
-                                           Function captureStateCallback)
+                                           @Nullable Runnable onSuccessCallback,
+                                           DartMessenger messenger)
           throws CameraAccessException {
 
     assert(filterPipelineController != null);
@@ -1148,11 +1149,11 @@ public class Camera
          );
 
     //reference to a state callback in this class assert it is correct
-    captureStateCallback = configureFilteredCaptureStateCallback(captureRequestBuilder, onSuccessCallback, messenger);
+    CameraCaptureSession.StateCallback captureStateCallback = configureFilteredCaptureStateCallback(captureRequestBuilder, onSuccessCallback, messenger);
     assert(captureStateCallback != null);
 
     if (VERSION.SDK_INT >= VERSION_CODES.P) {
-       startFilteredCaptureSession(captureSurface, captureStateCallback);
+       startFilteredCaptureSession(filterCameraConfigurations.cameraDeviceDriver, captureSurface, captureStateCallback);
     } else {
       Log.i(TAG, "Failed to start filtered capture for legacy android platforms - not implemented");
       // startSessionForLegacyVersions();
@@ -1160,13 +1161,21 @@ public class Camera
   }
 
   @RequiresApi(api = VERSION_CODES.P)
-  void startFilteredCaptureSession(Surface captureSurface,
+  void startFilteredCaptureSession(CameraDevice cameraDevice,
+                                   Surface captureSurface,
                                    CameraCaptureSession.StateCallback captureStateCallback)
-  throws CameraAccessException {
+          throws CameraAccessException {
     List<OutputConfiguration> configs = new ArrayList<>();
     configs.add(new OutputConfiguration(captureSurface));
-    createCaptureSessionWithSessionConfig(configs, captureStateCallback);
+    SessionConfiguration sessionConfiguration = new SessionConfiguration(
+            SessionConfiguration.SESSION_REGULAR,
+            configs,
+            Executors.newSingleThreadExecutor(),
+            captureStateCallback);
+    cameraDevice.createCaptureSession(sessionConfiguration);
   }
+
+
 
 
   void configurePreviewRequestBuilderForFilteredCapture(Surface captureSurface,
@@ -1195,8 +1204,8 @@ public class Camera
    * @param messenger DartMessenger used to inform Flutter of camera state events
    * @return
    */
-  Function configureFilteredCaptureStateCallback(CaptureRequest.Builder captureRequestBuilder,
-                                                 Runnable onSuccessCallback,
+  CameraCaptureSession.StateCallback configureFilteredCaptureStateCallback(CaptureRequest.Builder captureRequestBuilder,
+                                                 @Nullable Runnable onSuccessCallback,
                                                  DartMessenger messenger) {
 
     // Prepare the callback.
