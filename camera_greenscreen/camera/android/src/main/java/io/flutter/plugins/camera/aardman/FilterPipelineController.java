@@ -4,6 +4,7 @@ import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.media.ImageReader;
 import android.util.Size;
+import android.view.Surface;
 
 import java.util.HashMap;
 
@@ -66,7 +67,7 @@ public class FilterPipelineController {
      *  this imageReader provides the target surface for capturing
      *  the camera input
      */
-     public ImageReader getImageReader() {
+     public Surface getImageReaderSurface() {
 
          this.filterImageReader =
                  ImageReader.newInstance(
@@ -78,7 +79,7 @@ public class FilterPipelineController {
          ImageAvailableListener imageAvailableListener = new ImageAvailableListener(filterRenderer);
          this.filterImageReader.setOnImageAvailableListener(imageAvailableListener, null);
 
-         return this.filterImageReader;
+         return this.filterImageReader.getSurface();
     }
 
 
