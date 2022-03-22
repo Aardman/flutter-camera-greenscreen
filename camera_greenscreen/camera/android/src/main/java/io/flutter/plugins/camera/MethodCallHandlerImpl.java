@@ -31,7 +31,7 @@ final class MethodCallHandlerImpl implements MethodChannel.MethodCallHandler {
   private final MethodChannel methodChannel;
   private final EventChannel imageStreamChannel;
   private @Nullable Camera camera;
-  private final CameraPipelineLoader cameraPipelineLoader;
+  private CameraPipelineLoader cameraPipelineLoader;
 
   MethodCallHandlerImpl(
       Activity activity,
@@ -74,7 +74,7 @@ final class MethodCallHandlerImpl implements MethodChannel.MethodCallHandler {
               (String errCode, String errDesc) -> {
                 if (errCode == null) {
                   try {
-                    camera = this.cameraPipelineLoader.instantiateCameraPipeline(call, result);
+                      camera = this.cameraPipelineLoader.instantiateCameraPipeline(call, result);
                   } catch (Exception e) {
                     handleException(e, result);
                   }

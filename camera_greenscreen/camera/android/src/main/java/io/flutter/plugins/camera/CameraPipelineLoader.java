@@ -17,7 +17,6 @@ import java.util.Map;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugins.camera.aardman.CameraController;
 import io.flutter.plugins.camera.features.CameraFeatureFactoryImpl;
 import io.flutter.plugins.camera.features.resolution.ResolutionPreset;
 import io.flutter.view.TextureRegistry;
@@ -61,6 +60,7 @@ public class CameraPipelineLoader {
         return surfaceTextureEntry;
     }
 
+
     /*
      *  ImageReader will be the source of the registered texture.
      *  Let's start by adding an additional one.
@@ -78,6 +78,47 @@ public class CameraPipelineLoader {
 //            mImageReader.setOnImageAvailableListener(mImageAvailListener, mCameraHandler);
 //        }
     }
+
+    private void configureTextureBuffer(TextureRegistry.SurfaceTextureEntry surfaceTextureEntry,
+                                        int width, int height) {
+        SurfaceTexture surfaceTexture = surfaceTextureEntry.surfaceTexture();
+        surfaceTexture.setDefaultBufferSize(width, height);
+    }
+
+//    public CameraController instantiateFilterCameraPipeline(MethodCall call, MethodChannel.Result result) throws CameraAccessException {
+//
+//        String cameraName = call.argument("cameraName");
+//        String preset = call.argument("resolutionPreset");
+//        boolean enableAudio = call.argument("enableAudio");
+//
+//        int width = 200;
+//        int height = 200;
+//
+//        TextureRegistry.SurfaceTextureEntry flutterSurfaceTexture = makePipeline();
+//        configureTextureBuffer(flutterSurfaceTexture, width, height);
+//
+//        DartMessenger dartMessenger =
+//                new DartMessenger(
+//                        messenger, flutterSurfaceTexture.id(), new Handler(Looper.getMainLooper()));
+//        CameraProperties cameraProperties =
+//                new CameraPropertiesImpl(cameraName, CameraUtils.getCameraManager(activity));
+//        ResolutionPreset resolutionPreset = ResolutionPreset.valueOf(preset);
+//
+//        CameraController camera =
+//                new CameraController(
+//                        flutterSurfaceTexture,
+//                        dartMessenger,
+//                        cameraProperties,
+//                        resolutionPreset
+//                );
+//
+//        Map<String, Object> reply = new HashMap<>();
+//        reply.put("cameraId", flutterSurfaceTexture.id());
+//        result.success(reply);
+//
+//        return camera;
+//    }
+
 
     public Camera instantiateCameraPipeline(MethodCall call, MethodChannel.Result result) throws CameraAccessException {
         String cameraName = call.argument("cameraName");
@@ -110,76 +151,6 @@ public class CameraPipelineLoader {
         return camera;
     }
 
-    public CameraController instantiateFilterCameraPipeline(MethodCall call, MethodChannel.Result result) throws CameraAccessException {
-        String cameraName = call.argument("cameraName");
-        String preset = call.argument("resolutionPreset");
-        boolean enableAudio = call.argument("enableAudio");
-
-        TextureRegistry.SurfaceTextureEntry flutterSurfaceTexture = makePipeline();
-
-        DartMessenger dartMessenger =
-                new DartMessenger(
-                        messenger, flutterSurfaceTexture.id(), new Handler(Looper.getMainLooper()));
-        CameraProperties cameraProperties =
-                new CameraPropertiesImpl(cameraName, CameraUtils.getCameraManager(activity));
-        ResolutionPreset resolutionPreset = ResolutionPreset.valueOf(preset);
-
-        CameraController camera =
-                new CameraController(
-                        flutterSurfaceTexture,
-                        dartMessenger,
-                        cameraProperties,
-                        resolutionPreset
-                );
-
-        Map<String, Object> reply = new HashMap<>();
-        reply.put("cameraId", flutterSurfaceTexture.id());
-        result.success(reply);
-
-        return camera;
-    }
-
 }
 
-
-
-
-
-//    ImageReader targetImageReader = (ImageReader) pictureImageReader;
-//    Surface picSurface = targetImageReader.getSurface();
-//    SurfaceTexture picTexture = picSurface.surfaceTexture;
-//
-//    previewRequestBuilder.addTarget(targetImageReader.getSurface());
-
-//    ImageReader.OnImageAvailableListener mImageAvailListener = new ImageReader.OnImageAvailableListener() {
-//        @Override
-//        public void onImageAvailable(ImageReader reader) {
-//            //when a buffer is available from the camera
-//            //get the image
-//            Image image = reader.acquireNextImage();
-//
-//            Log.i(TAG, "Image Available" + image);
-
-//        Image.Plane[] planes = image.getPlanes();
-//
-//        //copy it into a byte[]
-//        byte[] outFrame = new byte[mFrameSize];
-//        int outFrameNextIndex = 0;
-//
-//
-//        ByteBuffer sourceBuffer = planes[0].getBuffer();
-//        sourceBuffer.get(tempYbuffer, 0, tempYbuffer.length);
-//
-//        ByteBuffer vByteBuf = planes[1].getBuffer();
-//        vByteBuf.get(tempVbuffer);
-//
-//        ByteBuffer yByteBuf = planes[2].getBuffer();
-//        yByteBuf.get(tempUbuffer);
-
-            //free the Image
-//            image.close();
-//        }
-//    };
-
-//targetImageReader.setOnImageAvailableListener(mImageAvailListener, backgroundHandler);
 

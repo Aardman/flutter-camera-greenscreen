@@ -4,6 +4,7 @@
 
 package io.flutter.plugins.camera;
 
+import io.flutter.plugins.camera.aardman.FilterParameters;
 import jp.co.cyberagent.android.gpuimage.GPUImage;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -75,7 +76,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
-import io.flutter.plugins.camera.aardman.FilterController;
+import io.flutter.plugins.camera.aardman.FilterPipelineController;
 
 @FunctionalInterface
 interface ErrorCallback {
@@ -141,7 +142,7 @@ public class Camera
   private MethodChannel.Result flutterResult;
 
   //Aardman-Animator
-  private FilterController filterCaptureController;
+  private FilterPipelineController filterCaptureController;
   GPUImage gpuImage;
 
   public Camera(
@@ -172,7 +173,7 @@ public class Camera
     captureProps = new CameraCaptureProperties();
     cameraCaptureCallback = CameraCaptureCallback.create(this, captureTimeouts, captureProps);
 
-    this.filterCaptureController = new FilterController();
+    this.filterCaptureController = new FilterPipelineController(flutterTexture.surfaceTexture());
 
     startBackgroundThread();
   }
@@ -1137,7 +1138,9 @@ public class Camera
 
  public void updateFilters(Object arguments) {
    HashMap map = (HashMap) arguments;
-   this.filterCaptureController.updateParameters(map);
+   FilterParameters parameters = new FilterParameters();
+   parameters.update(map);
+   this.filterCaptureController.updateParameters(parameters);
  }
 
   public void close() {
