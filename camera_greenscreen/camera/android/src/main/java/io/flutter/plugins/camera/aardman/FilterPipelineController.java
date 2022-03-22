@@ -67,7 +67,9 @@ public class FilterPipelineController {
      *  this imageReader provides the target surface for capturing
      *  the camera input
      */
-     public Surface getImageReaderSurface() {
+     public Surface getImageReaderSurface(Size viewSize) {
+
+         this.viewSize = viewSize;
 
          this.filterImageReader =
                  ImageReader.newInstance(

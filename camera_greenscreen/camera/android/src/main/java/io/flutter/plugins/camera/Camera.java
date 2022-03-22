@@ -5,6 +5,7 @@
 package io.flutter.plugins.camera;
 
 import io.flutter.plugins.camera.aardman.FilterParameters;
+import io.flutter.view.TextureRegistry;
 import jp.co.cyberagent.android.gpuimage.GPUImage;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -1082,7 +1083,6 @@ public class Camera
 
     startCaptureWithFiltering(
             this.filterCaptureController,
-            this.previewRequestBuilder,
             cameraConfigurations,
             null,
             this.dartMessenger);
@@ -1120,13 +1120,11 @@ public class Camera
    * Entry point for capture with the filtering pipeline
    *
    * @param filterPipelineController
-   * @param captureRequestBuilder
    * @param filterCameraConfigurations
    * @param onSuccessCallback - null in Flutter plugin implementation
    * @throws CameraAccessException
    */
   public void startCaptureWithFiltering(FilterPipelineController filterPipelineController,
-                                           CaptureRequest.Builder captureRequestBuilder,
                                            FilterCameraConfigurations filterCameraConfigurations,
                                            @Nullable Runnable onSuccessCallback,
                                            DartMessenger messenger)
@@ -1138,18 +1136,24 @@ public class Camera
     // Close existing capture session if it exists
     closeCaptureSession();
 
-    //get the capture surface from the pipeline
-    Surface captureSurface = filterPipelineController.getImageReaderSurface();
+    //get the capture surface from the pipeline ResolutionFeature
+    ResolutionFeature resolutionFeature = cameraFeatures.getResolution();
+    Size viewSize = new Size(resolutionFeature.getPreviewSize().getWidth(),
+                            resolutionFeature.getPreviewSize().getHeight());
+    Surface captureSurface = filterPipelineController.getImageReaderSurface(viewSize);
 
-    //setup the preview request
+    //setup the preview request this affects global state (not encapsulated)
     configurePreviewRequestBuilderForFilteredCapture(
             captureSurface,
-            captureRequestBuilder,
             filterCameraConfigurations
          );
 
     //reference to a state callback in this class assert it is correct
-    CameraCaptureSession.StateCallback captureStateCallback = configureFilteredCaptureStateCallback(captureRequestBuilder, onSuccessCallback, messenger);
+    CameraCaptureSession.StateCallback captureStateCallback = configureFilteredCaptureStateCallback(
+            this.previewRequestBuilder,
+            onSuccessCallback,
+            messenger
+    );
     assert(captureStateCallback != null);
 
     if (VERSION.SDK_INT >= VERSION_CODES.P) {
@@ -1176,18 +1180,17 @@ public class Camera
   }
 
 
-
-
   void configurePreviewRequestBuilderForFilteredCapture(Surface captureSurface,
-                                                        CaptureRequest.Builder captureRequestBuilder,
                                                         FilterCameraConfigurations configurations) throws CameraAccessException {
 
     // Create the preview request builder and assign it to the local state
-    captureRequestBuilder = configurations.cameraDeviceDriver.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-    assert (this.previewRequestBuilder == captureRequestBuilder);
+    CaptureRequest.Builder captureRequestBuilder = configurations.cameraDeviceDriver.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
 
     //set the capture surface for the builder
     captureRequestBuilder.addTarget(captureSurface);
+
+    //Set global state as this is used by different phases of operation, refreshing capture etc.
+    this.previewRequestBuilder = captureRequestBuilder;
 
     // Update camera regions.
     Size cameraBoundaries = CameraRegionUtils.getCameraBoundaries(configurations.cameraProperties, captureRequestBuilder);

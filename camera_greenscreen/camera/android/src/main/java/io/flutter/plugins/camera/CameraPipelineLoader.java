@@ -44,8 +44,6 @@ public class CameraPipelineLoader {
     private final BinaryMessenger messenger;
     private final Activity activity;
 
-    private @Nullable ImageReader filterTargetImageReader;
-
     public CameraPipelineLoader(TextureRegistry textureRegistry, BinaryMessenger messenger, Activity activity){
         this.textureRegistry = textureRegistry;
         this.messenger = messenger;
@@ -59,66 +57,6 @@ public class CameraPipelineLoader {
                 textureRegistry.createSurfaceTexture();
         return surfaceTextureEntry;
     }
-
-
-    /*
-     *  ImageReader will be the source of the registered texture.
-     *  Let's start by adding an additional one.
-     *
-     *  Uncertain where this is to be performed.
-     */
-    private void registerNewTextureEntry(SurfaceTexture surfaceTexture){
-        textureRegistry.registerSurfaceTexture(surfaceTexture);
-    }
-
-    private void createTargetSurfaceTexture(){
-        filterTargetImageReader = ImageReader.newInstance(640, 480, ImageFormat.YV12, 30);
-        Surface surface = filterTargetImageReader.getSurface();
-//        {
-//            mImageReader.setOnImageAvailableListener(mImageAvailListener, mCameraHandler);
-//        }
-    }
-
-    private void configureTextureBuffer(TextureRegistry.SurfaceTextureEntry surfaceTextureEntry,
-                                        int width, int height) {
-        SurfaceTexture surfaceTexture = surfaceTextureEntry.surfaceTexture();
-        surfaceTexture.setDefaultBufferSize(width, height);
-    }
-
-//    public CameraController instantiateFilterCameraPipeline(MethodCall call, MethodChannel.Result result) throws CameraAccessException {
-//
-//        String cameraName = call.argument("cameraName");
-//        String preset = call.argument("resolutionPreset");
-//        boolean enableAudio = call.argument("enableAudio");
-//
-//        int width = 200;
-//        int height = 200;
-//
-//        TextureRegistry.SurfaceTextureEntry flutterSurfaceTexture = makePipeline();
-//        configureTextureBuffer(flutterSurfaceTexture, width, height);
-//
-//        DartMessenger dartMessenger =
-//                new DartMessenger(
-//                        messenger, flutterSurfaceTexture.id(), new Handler(Looper.getMainLooper()));
-//        CameraProperties cameraProperties =
-//                new CameraPropertiesImpl(cameraName, CameraUtils.getCameraManager(activity));
-//        ResolutionPreset resolutionPreset = ResolutionPreset.valueOf(preset);
-//
-//        CameraController camera =
-//                new CameraController(
-//                        flutterSurfaceTexture,
-//                        dartMessenger,
-//                        cameraProperties,
-//                        resolutionPreset
-//                );
-//
-//        Map<String, Object> reply = new HashMap<>();
-//        reply.put("cameraId", flutterSurfaceTexture.id());
-//        result.success(reply);
-//
-//        return camera;
-//    }
-
 
     public Camera instantiateCameraPipeline(MethodCall call, MethodChannel.Result result) throws CameraAccessException {
         String cameraName = call.argument("cameraName");

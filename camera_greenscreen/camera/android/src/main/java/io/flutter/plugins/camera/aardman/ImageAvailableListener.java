@@ -1,5 +1,6 @@
 package io.flutter.plugins.camera.aardman;
 
+import android.media.Image;
 import android.media.ImageReader;
 import android.util.Log;
 
@@ -15,9 +16,10 @@ public class ImageAvailableListener implements ImageReader.OnImageAvailableListe
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-            Log.i(TAG, "onImageAvailable");
-            //Image img = reader.acquireNextImage();
-            output.handleNextImageFrame();
+            Image img = reader.acquireNextImage();
+            Log.i(TAG, "onImageAvailable" + img);
+           // output.handleNextImageFrame();
+            img.close();
         }
 
 }
