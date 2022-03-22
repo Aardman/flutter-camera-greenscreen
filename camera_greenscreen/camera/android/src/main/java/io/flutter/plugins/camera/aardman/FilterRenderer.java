@@ -3,6 +3,7 @@ package io.flutter.plugins.camera.aardman;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.opengl.GLES20;
+import android.util.Log;
 
 import java.io.IOException;
 
@@ -15,7 +16,9 @@ import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
 public class FilterRenderer extends GPURenderer
 implements FilterImageInput {
 
-      FilterParameters filterParameters;
+    private static final String TAG = "FilterRenderer";
+
+    FilterParameters filterParameters;
 
 
     public FilterRenderer(final GPUImageFilter filter) {
@@ -55,7 +58,7 @@ implements FilterImageInput {
      *  FilterImageInput Implementation
      */
     public void handleNextImageFrame(){
-
+        Log.i(TAG, "Image Frame Received on FilterImageInput");
     }
 
 
