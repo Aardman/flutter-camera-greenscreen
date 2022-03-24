@@ -18,6 +18,12 @@ import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
  * Part of the purpose of this class is to shim the new capture flow off from the
  * main Flutter Camera Plugin, this adopts the main responsibilities that are
  * to be altered.
+ *
+ * Responsibilities
+ *
+ * Setup and tear down the pipeline
+ * Update in flight parameters
+ *
  */
 public class FilterPipelineController {
 
@@ -90,14 +96,6 @@ public class FilterPipelineController {
     }
 
 
-    /*********************************
-     *      Rendering Callback       *
-     ********************************/
-
-     void onDraw(){
-         //Schedule draw call on openGL GLWorker
-     }
-
     /*********************
      *      Updates      *
      *********************/
@@ -110,19 +108,6 @@ public class FilterPipelineController {
      *      Disposal     *
      *********************/
 
-    //Do we need to pass back the capture callback?
-//    public SurfaceTexture setUpCapturePipeline() {
-//
-//        //initaliseImageReader(captureListener);
-//
-//        Surface filterSurface = filterImageReader.getSurface();
-//        SurfaceTexture filterTexture = null; // = (SurfaceTexture) filterSurface;
-//        return filterTexture;
-//    }
-
-    void initialiseImageReader() {
-        //filterImageReader = new ImageReader.OnImageAvailableListener();
-    }
 
 
 }

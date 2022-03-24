@@ -4,12 +4,13 @@ import android.opengl.GLES20;
 
 class GLWorker   {
 
-    //FilterPipelineControllerDelegate delegate;
+    FilterPipelineController  filterPipeline;
 
     public void onCreate() {
 
     }
 
+    //The render call itself
     public boolean onDraw() {
         GLES20.glClearColor(0f, 1f, 0f, 1f);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
