@@ -2,8 +2,7 @@ package io.flutter.plugins.camera.aardman;
 
 import android.media.Image;
 import android.media.ImageReader;
-import android.util.Log; 
-
+import android.util.Log;
 
 public class ImageAvailableListener implements ImageReader.OnImageAvailableListener {
 
@@ -21,12 +20,15 @@ public class ImageAvailableListener implements ImageReader.OnImageAvailableListe
             Image image = reader.acquireNextImage();
             Log.i(TAG, "onImageAvailable" + image);
 
-           // byte [] data = ImageExtensions.generateNV21Data(image);
+            byte [] data = ImageUtils.generateNV21Data(image);
+
+            int width = image.getWidth();
+            int height = image.getHeight();
 
             image.close();
 
             //size of data actualy
-            output.onPreviewFrame( null, image.getWidth(), image.getHeight());
+            output.onPreviewFrame( data, width, height);
         }
 
 }

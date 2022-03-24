@@ -81,6 +81,7 @@ public class FilterPipelineController {
                  ImageReader.newInstance(
                          viewSize.getWidth(),
                          viewSize.getHeight(),
+                         //This old fashioned format is expected by GPUImage native library for RGB conversion YUV_420_888
                          ImageFormat.YUV_420_888,
                          2);
 

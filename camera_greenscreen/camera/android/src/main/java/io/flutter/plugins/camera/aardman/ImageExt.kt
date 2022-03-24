@@ -2,7 +2,7 @@
  * From GPUImage Sample application - copied and give public access (if needed)
  */
 
-@file:JvmName("ImageExtensions")
+//@file:JvmName("ImageExtensions")
 
 package io.flutter.plugins.camera.aardman
 
@@ -10,6 +10,7 @@ import android.graphics.ImageFormat
 import android.media.Image
 import android.os.Build
 import androidx.annotation.RequiresApi
+
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 public fun Image.generateNV21Data(): ByteArray {
