@@ -7,5 +7,5 @@ package io.flutter.plugins.camera.aardman;
  * Instantiated in the current pipeline by FilterRenderer
  */
 interface FilterImageInput {
-    void handleNextImageFrame();
+    void onPreviewFrame(byte[] data, int width, int height);
 }

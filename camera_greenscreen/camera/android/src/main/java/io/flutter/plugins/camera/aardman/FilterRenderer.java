@@ -16,6 +16,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import jp.co.cyberagent.android.gpuimage.GPUImage;
+import jp.co.cyberagent.android.gpuimage.GPUImageNativeLibrary;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
 import jp.co.cyberagent.android.gpuimage.util.OpenGlUtils;
 import jp.co.cyberagent.android.gpuimage.util.Rotation;
@@ -119,15 +120,37 @@ public class FilterRenderer implements FilterImageInput {
     /**
      *  FilterImageInput Implementation
      */
-    public void handleNextImageFrame(){
-        Log.i(TAG, "Image Frame Received on FilterImageInput");
-        //
-    }
 
     /**
-     * Render still frame as a bitmap
+     * Capture frame rendering - using the preview frame
+     * This should run on the camera capture thread
+     *
+     * GPUImage provides the GPUImageNativeLibrary with a native
+     * implementation for converting NV21 (YUV) planar byte array to RGB
+     * which is needed to load the input texture corresponding to glTextureId
      */
+    public void onPreviewFrame(final byte[] data, final int width, final int height) {
+        if (glRgbBuffer == null) {
+            glRgbBuffer = IntBuffer.allocate(width * height);
+        }
 
+        GPUImageNativeLibrary.YUVtoRBGA(data, width, height, glRgbBuffer.array());
+        glTextureId = OpenGlUtils.loadTexture(glRgbBuffer, width, height, glTextureId);
+
+        if (imageWidth != width) {
+            imageWidth = width;
+            imageHeight = height;
+            adjustImageScaling();
+        }
+    }
+
+
+    /**
+     *
+     * Render still frame as a bitmap
+     *
+     *
+     */
     public void setImageBitmap(final Bitmap bitmap) {
         setImageBitmap(bitmap, true);
     }

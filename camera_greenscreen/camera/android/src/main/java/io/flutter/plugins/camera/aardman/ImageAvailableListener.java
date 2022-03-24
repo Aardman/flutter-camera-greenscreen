@@ -2,7 +2,8 @@ package io.flutter.plugins.camera.aardman;
 
 import android.media.Image;
 import android.media.ImageReader;
-import android.util.Log;
+import android.util.Log; 
+
 
 public class ImageAvailableListener implements ImageReader.OnImageAvailableListener {
 
@@ -16,10 +17,16 @@ public class ImageAvailableListener implements ImageReader.OnImageAvailableListe
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-            Image img = reader.acquireNextImage();
-            Log.i(TAG, "onImageAvailable" + img);
-           // output.handleNextImageFrame();
-            img.close();
+
+            Image image = reader.acquireNextImage();
+            Log.i(TAG, "onImageAvailable" + image);
+
+           // byte [] data = ImageExtensions.generateNV21Data(image);
+
+            image.close();
+
+            //size of data actualy
+            output.onPreviewFrame( null, image.getWidth(), image.getHeight());
         }
 
 }
@@ -44,8 +51,8 @@ public class ImageAvailableListener implements ImageReader.OnImageAvailableListe
 //        Image.Plane[] planes = image.getPlanes();
 //
 //        //copy it into a byte[]
-//        byte[] outFrame = new byte[mFrameSize];
-//        int outFrameNextIndex = 0;
+//       byte[] outFrame = new byte[mFrameSize];
+//         int outFrameNextIndex = 0;
 //
 //
 //        ByteBuffer sourceBuffer = planes[0].getBuffer();
