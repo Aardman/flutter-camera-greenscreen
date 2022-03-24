@@ -19,9 +19,9 @@ public class GLBridge implements Runnable {
     private EGLSurface eglSurface;
 
     private boolean running;
-    private OpenGLWorker worker;
+    private  GLWorker worker;
 
-    public GLBridge(SurfaceTexture flutterTexture, OpenGLWorker worker) {
+    public GLBridge(SurfaceTexture flutterTexture,  GLWorker worker) {
         this.flutterTexture = flutterTexture;
         this.running = true;
         this.worker = worker;
@@ -65,7 +65,8 @@ public class GLBridge implements Runnable {
     }
 
 
-    //To replace with appropriate
+    //To replace with appropriate guarded run
+    //after QA testing
     @Override
     public void run() {
         initGL();
@@ -95,7 +96,6 @@ public class GLBridge implements Runnable {
         worker.onDispose();
         deinitGL();
     }
-
 
     private EGLContext createContext(EGL10 egl, EGLDisplay eglDisplay, EGLConfig eglConfig) {
         int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
@@ -142,9 +142,5 @@ public class GLBridge implements Runnable {
         running = false;
     }
 
-    public interface OpenGLWorker {
-        void onCreate();
-        boolean onDraw();
-        void onDispose();
-    }
+
 }

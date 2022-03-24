@@ -50,8 +50,8 @@ public class FilterPipelineController {
         GPUImageFilter filter = new GPUImageChromaKeyBlendFilter();
 
         //renderer
-        this.filterRenderer = new FilterRenderer(filter);
-        this.filterRenderer.initialiseParameters(new FilterParameters());
+        filterRenderer = new FilterRenderer(filter);
+        filterRenderer.initialiseParameters(new FilterParameters());
     }
 
     /**
@@ -78,7 +78,12 @@ public class FilterPipelineController {
                          ImageFormat.YUV_420_888,
                          2);
 
-         ImageAvailableListener imageAvailableListener = new ImageAvailableListener(filterRenderer);
+         ImageAvailableListener imageAvailableListener = new ImageAvailableListener((FilterImageInput) filterRenderer);
+
+         /**
+          *  Note this ImageReader takes a null handler ref as it will run on the calling thread
+          *  which is the camera preview callback thread, so there is no need to set handler explicitly
+          */
          this.filterImageReader.setOnImageAvailableListener(imageAvailableListener, null);
 
          return this.filterImageReader.getSurface();
