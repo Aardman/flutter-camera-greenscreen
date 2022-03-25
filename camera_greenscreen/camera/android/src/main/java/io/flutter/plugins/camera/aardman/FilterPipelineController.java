@@ -6,8 +6,6 @@ import android.media.ImageReader;
 import android.util.Size;
 import android.view.Surface;
 
-import java.util.HashMap;
-
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageChromaKeyBlendFilter;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
 
@@ -36,7 +34,12 @@ public class FilterPipelineController {
     /** The current openGL rendering thread */
     GLWorker glWorker;
 
-    /** The renderer that takes imageReader captured frames and applies the filters */
+    /**
+     * The renderer that takes imageReader captured frames and applies the filtering
+     *
+     * That stage could be the GPUImageFilters, or native as in Chornenko example
+     *
+     */
     FilterRenderer filterRenderer;
 
     /** Current window dimensions */
@@ -85,7 +88,7 @@ public class FilterPipelineController {
                          ImageFormat.YUV_420_888,
                          2);
 
-         ImageAvailableListener imageAvailableListener = new ImageAvailableListener((FilterImageInput) filterRenderer);
+         ImageAvailableListener imageAvailableListener = new ImageAvailableListener((PreviewFrameHandler) filterRenderer);
 
          /**
           *  Note this ImageReader takes a null handler ref as it will run on the calling thread

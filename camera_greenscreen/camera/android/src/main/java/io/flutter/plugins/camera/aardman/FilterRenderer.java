@@ -5,11 +5,8 @@ import static jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil.TEXTURE
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.SurfaceTexture;
-import android.hardware.Camera;
 import android.opengl.GLES20;
-import android.util.Log;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -26,25 +23,30 @@ import jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil;
 *
  * Responsibilities
  *
- * Manage the rendering process
- * Hold a reference to the Filter/glProgram pipeline (if using non GPUImage filter)
+ * Manage the double buffered rendering process
+ * Hold a reference to the Filter/glProgram pipeline
  * Handle calls for onDraw and onPreviewFrame events for each buffer
- * Schedule buffer transfer to the Flutter surface texture
+ * Schedule rendering on GLWorker
  *
  * TODO: Is this needed? How much is done already by the client code (Plugin)
  * Handle Graphics calculations re: transforms such as rotation and scaling
  *
 */
-public class FilterRenderer implements FilterImageInput {
+public class FilterRenderer implements PreviewFrameHandler {
 
     private static final String TAG = "FilterRenderer";
 
-    /** Dependencies */
+    /**
+     * Dependencies
+     */
+    private GLWorker glWorkerThread;
+    private FilterParameters filterParameters;
     private SurfaceTexture hardwareTexture;
     private GPUImageFilter glFilterProgramWrapper;
-    private FilterParameters filterParameters;
 
-    /** Display parameters */
+    /**
+     * Display parameters
+     */
     private int outputWidth;
     private int outputHeight;
     private int imageWidth;
@@ -55,8 +57,9 @@ public class FilterRenderer implements FilterImageInput {
     private boolean flipVertical;
     private GPUImage.ScaleType scaleType = GPUImage.ScaleType.CENTER_CROP;
 
-
-    /** OpenGL parameters */
+    /**
+     * OpenGL parameters
+     */
     private static final int NO_IMAGE = -1;
     public static final float CUBE[] = {
             -1.0f, -1.0f,
@@ -70,6 +73,12 @@ public class FilterRenderer implements FilterImageInput {
     private FloatBuffer glTextureBuffer;
     private IntBuffer glRgbBuffer;
 
+
+    /*********************************************************************************
+     *
+     *                   Setting up the openGL Filter engine
+     *
+     *********************************************************************************/
 
     public FilterRenderer(GPUImageFilter filter) {
         setFilter(filter);
@@ -108,23 +117,14 @@ public class FilterRenderer implements FilterImageInput {
           this.filterParameters = filterParameters;
       }
 
-    protected int getFrameWidth() {
-        return outputWidth;
-    }
 
-    protected int getFrameHeight() {
-        return outputHeight;
-    }
-
-
-    /**
-     *  FilterImageInput Implementation
-     */
-
-    /**
-     * Capture frame rendering - using the preview frame
-     * This should run on the camera capture thread
+    /*********************************************************************************
      *
+     *                   PreviewFrameHandler (Camera Thread)
+     *
+     *********************************************************************************/
+
+     /**
      * GPUImage provides the GPUImageNativeLibrary with a native
      * implementation for converting NV21 (YUV) planar byte array to RGB
      * which is needed to load the input texture corresponding to glTextureId
@@ -135,7 +135,7 @@ public class FilterRenderer implements FilterImageInput {
             glRgbBuffer = IntBuffer.allocate(width * height);
         }
 
-        //This is the major bottleneck
+        //Is this handled on the same thread as for GPUImage?
         GPUImageNativeLibrary.YUVtoRBGA(data, width, height, glRgbBuffer.array());
         glTextureId = OpenGlUtils.loadTexture(glRgbBuffer, width, height, glTextureId);
 
@@ -144,15 +144,17 @@ public class FilterRenderer implements FilterImageInput {
             imageHeight = height;
             adjustImageScaling();
         }
+
+        //Request Render operation on the filter on the GL rendering thread
+        glWorkerThread.requestRender();
     }
 
+    /*********************************************************************************
+     *
+     *                      Still Image Capture Helper
+     *
+     *********************************************************************************/
 
-    /**
-     *
-     * Render still frame as a bitmap
-     *
-     *
-     */
     public void setImageBitmap(final Bitmap bitmap) {
         setImageBitmap(bitmap, true);
     }
@@ -182,11 +184,22 @@ public class FilterRenderer implements FilterImageInput {
         adjustImageScaling();
     }
 
-    /**
-     * Graphics helper functions
-     */
 
-        private void adjustImageScaling() {
+    /*********************************************************************************
+     *
+     *                          Graphics helper functions
+     *
+     *********************************************************************************/
+
+    protected int getFrameWidth() {
+        return outputWidth;
+    }
+
+    protected int getFrameHeight() {
+        return outputHeight;
+    }
+
+    private void adjustImageScaling() {
             float outputWidth = this.outputWidth;
             float outputHeight = this.outputHeight;
             if (rotation == Rotation.ROTATION_270 || rotation == Rotation.ROTATION_90) {

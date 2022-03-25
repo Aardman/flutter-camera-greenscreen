@@ -3,7 +3,6 @@ package io.flutter.plugins.camera.aardman;
 import android.graphics.ImageFormat;
 import android.media.Image;
 import android.media.ImageReader;
-import android.util.Log;
 
 import java.nio.ByteBuffer;
 
@@ -11,10 +10,10 @@ public class ImageAvailableListener implements ImageReader.OnImageAvailableListe
 
     private static final String TAG = "ImageAvailableListener";
 
-    FilterImageInput output;
+    PreviewFrameHandler output;
 
-        public ImageAvailableListener(FilterImageInput filterImageInput){
-            this.output = filterImageInput;
+        public ImageAvailableListener(PreviewFrameHandler previewFrameHandler){
+            this.output = previewFrameHandler;
         }
 
         @Override
@@ -22,6 +21,7 @@ public class ImageAvailableListener implements ImageReader.OnImageAvailableListe
 
             Image image = reader.acquireNextImage();
 
+            //This operation is fast
             byte [] data = YUV_420_888_data(image);
 
             int width = image.getWidth();
@@ -29,7 +29,6 @@ public class ImageAvailableListener implements ImageReader.OnImageAvailableListe
 
             image.close();
 
-            //size of data actualy
             output.onPreviewFrame( data, width, height);
         }
 
