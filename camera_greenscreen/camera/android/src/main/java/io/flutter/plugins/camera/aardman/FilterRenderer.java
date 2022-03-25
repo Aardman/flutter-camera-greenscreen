@@ -130,10 +130,12 @@ public class FilterRenderer implements FilterImageInput {
      * which is needed to load the input texture corresponding to glTextureId
      */
     public void onPreviewFrame(final byte[] data, final int width, final int height) {
+
         if (glRgbBuffer == null) {
             glRgbBuffer = IntBuffer.allocate(width * height);
         }
 
+        //This is the major bottleneck
         GPUImageNativeLibrary.YUVtoRBGA(data, width, height, glRgbBuffer.array());
         glTextureId = OpenGlUtils.loadTexture(glRgbBuffer, width, height, glTextureId);
 
