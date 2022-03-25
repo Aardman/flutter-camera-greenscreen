@@ -1,14 +1,21 @@
 package io.flutter.plugins.camera.aardman;
 
 import android.graphics.SurfaceTexture;
+import android.opengl.GLDebugHelper;
 import android.opengl.GLUtils;
 import android.util.Log;
+
+import java.io.Writer;
 
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.egl.EGLSurface;
+import javax.microedition.khronos.opengles.GL;
+import javax.microedition.khronos.opengles.GL10;
+
+import jp.co.cyberagent.android.gpuimage.GLTextureView;
 
 public class GLBridge implements Runnable {
     private static final String LOG_TAG = "EglBridge.GLWorker";
@@ -18,7 +25,10 @@ public class GLBridge implements Runnable {
     private EGLContext eglContext;
     private EGLSurface eglSurface;
 
+    private GL10 gl = null;
+
     private boolean running;
+
     private  GLWorker worker;
 
     public GLBridge(SurfaceTexture flutterTexture,  GLWorker worker) {
@@ -54,7 +64,11 @@ public class GLBridge implements Runnable {
         if (!egl.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
             throw new RuntimeException("GL make current error: " + GLUtils.getEGLErrorString(egl.eglGetError()));
         }
+
+        /** Get GL for rendering */
+        gl = (GL10) eglContext.getGL();
     }
+
 
     private void deinitGL() {
         egl.eglMakeCurrent(eglDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
@@ -64,7 +78,6 @@ public class GLBridge implements Runnable {
         Log.d(LOG_TAG, "OpenGL deinit OK.");
     }
 
-
     //To replace with appropriate guarded run
     //after QA testing
     @Override
@@ -73,25 +86,22 @@ public class GLBridge implements Runnable {
         worker.onCreate();
         Log.d(LOG_TAG, "OpenGL init OK.");
 
-        while (running) {
-            long loopStart = System.currentTimeMillis();
+            while (running) {
+                        //Draw operations are to the current eglSurface
+                        synchronized(worker) {
+                            if (worker.isAwaitingRender()) {
+                                worker.onDrawFrame();
+                            }
+                        }
+                        //Swap from current eglSurface to display surface
+                        if (!egl.eglSwapBuffers(eglDisplay, eglSurface)) {
+                            Log.d(LOG_TAG, String.valueOf(egl.eglGetError()));
+                        }
+                        //Log.d(LOG_TAG, "In main glThread run");
+                        //worker.setAwaitingRender(false);
+                   }
 
 
-            //Draw call will be delegated to the renderer
-            if (worker.onDraw()) {
-                if (!egl.eglSwapBuffers(eglDisplay, eglSurface)) {
-                    Log.d(LOG_TAG, String.valueOf(egl.eglGetError()));
-                }
-            }
-
-            long waitDelta = 16 - (System.currentTimeMillis() - loopStart);
-            if (waitDelta > 0) {
-                try {
-                    Thread.sleep(waitDelta);
-                } catch (InterruptedException e) {
-                }
-            }
-        }
 
         worker.onDispose();
         deinitGL();

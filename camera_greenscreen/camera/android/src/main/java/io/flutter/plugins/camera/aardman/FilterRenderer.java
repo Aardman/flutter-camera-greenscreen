@@ -4,7 +4,6 @@ import static jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil.TEXTURE
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
 
 import java.nio.ByteBuffer;
@@ -14,10 +13,11 @@ import java.nio.IntBuffer;
 
 import jp.co.cyberagent.android.gpuimage.GPUImage;
 import jp.co.cyberagent.android.gpuimage.GPUImageNativeLibrary;
-import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
 import jp.co.cyberagent.android.gpuimage.util.OpenGlUtils;
 import jp.co.cyberagent.android.gpuimage.util.Rotation;
 import jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil;
+
+import io.flutter.plugins.camera.aardman.fixedfilter.*;
 
 /**
 *
@@ -32,25 +32,25 @@ import jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil;
  * Handle Graphics calculations re: transforms such as rotation and scaling
  *
 */
-public class FilterRenderer implements PreviewFrameHandler {
+public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
 
     private static final String TAG = "FilterRenderer";
 
     /**
      * Dependencies
      */
-    private GLWorker glWorkerThread;
     private FilterParameters filterParameters;
-    private SurfaceTexture hardwareTexture;
-    private GPUImageFilter glFilterProgramWrapper;
+    //We do not require, as all openGL operations are on the current eglSurface
+    //private SurfaceTexture filterTexture;
+    private FixedBaseFilter glFilterProgramWrapper;
 
     /**
      * Display parameters
      */
-    private int outputWidth;
-    private int outputHeight;
-    private int imageWidth;
-    private int imageHeight;
+    private int outputWidth = 720 ;
+    private int outputHeight = 480 ;
+    private int imageWidth = 720 ;
+    private int imageHeight = 480;
 
     private Rotation rotation;
     private boolean flipHorizontal;
@@ -61,18 +61,22 @@ public class FilterRenderer implements PreviewFrameHandler {
      * OpenGL parameters
      */
     private static final int NO_IMAGE = -1;
-    public static final float CUBE[] = {
-            -1.0f, -1.0f,
-            1.0f, -1.0f,
-            -1.0f, 1.0f,
-            1.0f, 1.0f,
+    public static final float QUAD[] = {
+            -1.f, 1.f,
+            -1.f, -1.f,
+            1.f, 1.f,
+            1.f, -1.f
     };
+
     private int glTextureId = NO_IMAGE;
-    private SurfaceTexture surfaceTexture = null;
-    private FloatBuffer glCubeBuffer;
+    private FloatBuffer glFullScreenQuadBuffer;
     private FloatBuffer glTextureBuffer;
     private IntBuffer glRgbBuffer;
 
+    /**
+     * OpenGL render state
+     */
+    public boolean awaitingRenderOperation = false;
 
     /*********************************************************************************
      *
@@ -80,16 +84,16 @@ public class FilterRenderer implements PreviewFrameHandler {
      *
      *********************************************************************************/
 
-    public FilterRenderer(GPUImageFilter filter) {
+    public FilterRenderer(FixedBaseFilter filter) {
         setFilter(filter);
         setupGLParameters();
     }
 
     private void setupGLParameters(){
-        glCubeBuffer = ByteBuffer.allocateDirect(CUBE.length * 4)
+        glFullScreenQuadBuffer = ByteBuffer.allocateDirect(QUAD.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer();
-        glCubeBuffer.put(CUBE).position(0);
+        glFullScreenQuadBuffer.put(QUAD).position(0);
 
         glTextureBuffer = ByteBuffer.allocateDirect(TEXTURE_NO_ROTATION.length * 4)
                 .order(ByteOrder.nativeOrder())
@@ -97,11 +101,7 @@ public class FilterRenderer implements PreviewFrameHandler {
         setRotation(Rotation.NORMAL, false, false);
     }
 
-    public void initialiseSurfaceTextureForFlutterDisplay(SurfaceTexture flutterTexture){
-        hardwareTexture = flutterTexture;
-    }
-
-    private void setFilter(GPUImageFilter filter){
+    private void setFilter(FixedBaseFilter filter){
         glFilterProgramWrapper = filter;
         glFilterProgramWrapper.ifNeedInit();
         GLES20.glUseProgram(filter.getProgram());
@@ -146,8 +146,51 @@ public class FilterRenderer implements PreviewFrameHandler {
         }
 
         //Request Render operation on the filter on the GL rendering thread
-        glWorkerThread.requestRender();
+        requestRender();
+
+        //worker will then schedule the call to onDraw to render the filter and
+        //trigger the buffer swap
     }
+
+
+
+    /*********************************************************************************
+     *
+     *          Filter Draw Calls - including GLWorker Implementation
+     *
+     *********************************************************************************/
+
+    public void requestRender() {
+        awaitingRenderOperation = true;
+    }
+
+    public boolean isAwaitingRender() {
+        return awaitingRenderOperation;
+    }
+
+    public void setAwaitingRender(boolean awaitingRender){
+        awaitingRenderOperation = awaitingRender;
+    }
+
+    public void onCreate() {}
+    public void onDispose() {}
+
+    private double _tick = 0;
+
+    public void onDrawFrame() {
+        _tick = _tick + Math.PI / 60;
+        float green = (float) ((Math.sin(_tick) + 1) / 2);
+        GLES20.glClearColor(0f, green, 0f, 1f);
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
+
+
+       //Just write that glTextureId to the current eglSurface
+
+       //glFilterProgramWrapper.onDraw(glTextureId, glFullScreenQuadBuffer, glTextureBuffer);
+
+       awaitingRenderOperation = false;
+    }
+
 
     /*********************************************************************************
      *
@@ -216,7 +259,7 @@ public class FilterRenderer implements PreviewFrameHandler {
             float ratioWidth = imageWidthNew / outputWidth;
             float ratioHeight = imageHeightNew / outputHeight;
 
-            float[] cube = CUBE;
+            float[] cube = QUAD;
             float[] textureCords = TextureRotationUtil.getRotation(rotation, flipHorizontal, flipVertical);
             if (scaleType == GPUImage.ScaleType.CENTER_CROP) {
                 float distHorizontal = (1 - 1 / ratioWidth) / 2;
@@ -229,15 +272,15 @@ public class FilterRenderer implements PreviewFrameHandler {
                 };
             } else {
                 cube = new float[]{
-                        CUBE[0] / ratioHeight, CUBE[1] / ratioWidth,
-                        CUBE[2] / ratioHeight, CUBE[3] / ratioWidth,
-                        CUBE[4] / ratioHeight, CUBE[5] / ratioWidth,
-                        CUBE[6] / ratioHeight, CUBE[7] / ratioWidth,
+                        QUAD[0] / ratioHeight, QUAD[1] / ratioWidth,
+                        QUAD[2] / ratioHeight, QUAD[3] / ratioWidth,
+                        QUAD[4] / ratioHeight, QUAD[5] / ratioWidth,
+                        QUAD[6] / ratioHeight, QUAD[7] / ratioWidth,
                 };
             }
 
-            glCubeBuffer.clear();
-            glCubeBuffer.put(cube).position(0);
+            glFullScreenQuadBuffer.clear();
+            glFullScreenQuadBuffer.put(cube).position(0);
             glTextureBuffer.clear();
             glTextureBuffer.put(textureCords).position(0);
         }

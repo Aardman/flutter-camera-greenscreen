@@ -6,6 +6,8 @@ import android.media.ImageReader;
 import android.util.Size;
 import android.view.Surface;
 
+import io.flutter.plugins.camera.aardman.fixedfilter.FixedBaseFilter;
+import io.flutter.plugins.camera.aardman.fixedfilter.FixedGrayscaleFilter;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageChromaKeyBlendFilter;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
 
@@ -31,16 +33,16 @@ public class FilterPipelineController {
     /** The eglBridge manages the OpenGL pipeline */
     GLBridge eglBridge;
 
-    /** The current openGL rendering thread */
-    GLWorker glWorker;
-
     /**
+     *
+     * The current openGL rendering thread
+     *
      * The renderer that takes imageReader captured frames and applies the filtering
      *
      * That stage could be the GPUImageFilters, or native as in Chornenko example
      *
-     */
-    FilterRenderer filterRenderer;
+     * */
+    GLWorker glWorker;
 
     /** Current window dimensions */
     Size viewSize;
@@ -51,16 +53,16 @@ public class FilterPipelineController {
 
     public FilterPipelineController(SurfaceTexture flutterTexture) {
 
+        //The filter or filter group
+        FixedBaseFilter filter = new FixedBaseFilter();
+
         //eglBridge will start openGL session running
-        GLWorker glWorker = new GLWorker();
+        FilterRenderer renderer = new FilterRenderer(filter);
+        glWorker =  (GLWorker) renderer;
         this.eglBridge = new GLBridge(flutterTexture, glWorker);
 
-        //The filter or filter group
-        GPUImageFilter filter = new GPUImageChromaKeyBlendFilter();
-
-        //renderer
-        filterRenderer = new FilterRenderer(filter);
-        filterRenderer.initialiseParameters(new FilterParameters());
+        //TODO:
+        // filterRenderer.initialiseParameters(new FilterParameters());
     }
 
     /**
@@ -88,7 +90,7 @@ public class FilterPipelineController {
                          ImageFormat.YUV_420_888,
                          2);
 
-         ImageAvailableListener imageAvailableListener = new ImageAvailableListener((PreviewFrameHandler) filterRenderer);
+         ImageAvailableListener imageAvailableListener = new ImageAvailableListener((PreviewFrameHandler) glWorker);
 
          /**
           *  Note this ImageReader takes a null handler ref as it will run on the calling thread
@@ -105,13 +107,13 @@ public class FilterPipelineController {
      *********************/
 
     public void updateParameters(FilterParameters parameters){
-        this.filterRenderer.updateFilterParameters(parameters);
+        //TODO:
+        //this.filterRenderer.updateFilterParameters(parameters);
     }
 
     /*********************
      *      Disposal     *
      *********************/
-
 
 
 }
