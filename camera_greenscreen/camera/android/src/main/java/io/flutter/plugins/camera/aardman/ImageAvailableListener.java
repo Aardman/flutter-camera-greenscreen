@@ -1,8 +1,11 @@
 package io.flutter.plugins.camera.aardman;
 
 import android.graphics.ImageFormat;
+import android.graphics.Rect;
 import android.media.Image;
 import android.media.ImageReader;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.ByteBuffer;
 
@@ -22,7 +25,7 @@ public class ImageAvailableListener implements ImageReader.OnImageAvailableListe
             Image image = reader.acquireNextImage();
 
             //This operation is fast
-            byte [] data = YUV_420_888_data(image);
+            byte [] data = generateNV21Data(image);
 
             int width = image.getWidth();
             int height = image.getHeight();
@@ -33,47 +36,78 @@ public class ImageAvailableListener implements ImageReader.OnImageAvailableListe
         }
 
 
-    private static byte[] YUV_420_888_data(Image image) {
-        final int imageWidth = image.getWidth();
-        final int imageHeight = image.getHeight();
-        final Image.Plane[] planes = image.getPlanes();
-        byte[] data = new byte[imageWidth * imageHeight *
-                ImageFormat.getBitsPerPixel(ImageFormat.YUV_420_888) / 8];
-        int offset = 0;
+    public static final byte[] generateNV21Data(@NotNull Image image) {
+        Rect crop = image.getCropRect();
+        int format = image.getFormat();
+        int width = crop.width();
+        int height = crop.height();
+        Image.Plane[] planes = image.getPlanes();
+        byte[] data = new byte[width * height * ImageFormat.getBitsPerPixel(format) / 8];
+        Image.Plane var10000 = planes[0];
+        //Intrinsics.checkNotNullExpressionValue(planes[0], "planes[0]");
+        byte[] rowData = new byte[var10000.getRowStride()];
+        int channelOffset = 0;
+        int outputStride = 1;
+        int i = 0;
+        // Intrinsics.checkNotNullExpressionValue(planes, "planes");
 
-        for (int plane = 0; plane < planes.length; ++plane) {
-            final ByteBuffer buffer = planes[plane].getBuffer();
-            final int rowStride = planes[plane].getRowStride();
-            // Experimentally, U and V planes have |pixelStride| = 2, which
-            // essentially means they are packed.
-            final int pixelStride = planes[plane].getPixelStride();
-            final int planeWidth = (plane == 0) ? imageWidth : imageWidth / 2;
-            final int planeHeight = (plane == 0) ? imageHeight : imageHeight / 2;
-            if (pixelStride == 1 && rowStride == planeWidth) {
-                // Copy whole plane from buffer into |data| at once.
-                buffer.get(data, offset, planeWidth * planeHeight);
-                offset += planeWidth * planeHeight;
-            } else {
-                // Copy pixels one by one respecting pixelStride and rowStride.
-                byte[] rowData = new byte[rowStride];
-                for (int row = 0; row < planeHeight - 1; ++row) {
-                    buffer.get(rowData, 0, rowStride);
-                    for (int col = 0; col < planeWidth; ++col) {
-                        data[offset++] = rowData[col * pixelStride];
+        for(int var11 = planes.length; i < var11; ++i) {
+            switch(i) {
+                case 0:
+                    channelOffset = 0;
+                    outputStride = 1;
+                    break;
+                case 1:
+                    channelOffset = width * height + 1;
+                    outputStride = 2;
+                    break;
+                case 2:
+                    channelOffset = width * height;
+                    outputStride = 2;
+            }
+
+            var10000 = planes[i];
+            // Intrinsics.checkNotNullExpressionValue(planes[i], "planes[i]");
+            ByteBuffer buffer = var10000.getBuffer();
+            var10000 = planes[i];
+            // Intrinsics.checkNotNullExpressionValue(planes[i], "planes[i]");
+            int rowStride = var10000.getRowStride();
+            var10000 = planes[i];
+            // Intrinsics.checkNotNullExpressionValue(planes[i], "planes[i]");
+            int pixelStride = var10000.getPixelStride();
+            int shift = i == 0 ? 0 : 1;
+            int w = width >> shift;
+            int h = height >> shift;
+            buffer.position(rowStride * (crop.top >> shift) + pixelStride * (crop.left >> shift));
+            int row = 0;
+
+            for(int var19 = h; row < var19; ++row) {
+                int length;
+                if (pixelStride == 1 && outputStride == 1) {
+                    length = w;
+                    buffer.get(data, channelOffset, w);
+                    channelOffset += w;
+                } else {
+                    length = (w - 1) * pixelStride + 1;
+                    buffer.get(rowData, 0, length);
+                    int col = 0;
+
+                    for(int var22 = w; col < var22; ++col) {
+                        data[channelOffset] = rowData[col * pixelStride];
+                        channelOffset += outputStride;
                     }
                 }
-                // Last row is special in some devices and may not contain the full
-                // |rowStride| bytes of data.
-                // See http://developer.android.com/reference/android/media/Image.Plane.html#getBuffer()
-                buffer.get(rowData, 0, Math.min(rowStride, buffer.remaining()));
-                for (int col = 0; col < planeWidth; ++col) {
-                    data[offset++] = rowData[col * pixelStride];
+
+                if (row < h - 1) {
+                    buffer.position(buffer.position() + rowStride - length);
                 }
             }
         }
 
         return data;
     }
+
+
 
 }
 
