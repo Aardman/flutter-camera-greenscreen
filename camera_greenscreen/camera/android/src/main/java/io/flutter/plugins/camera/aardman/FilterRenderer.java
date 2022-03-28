@@ -5,11 +5,14 @@ import static jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil.TEXTURE
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.opengl.GLES20;
+import android.util.Size;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import jp.co.cyberagent.android.gpuimage.GPUImage;
 import jp.co.cyberagent.android.gpuimage.GPUImageNativeLibrary;
@@ -42,15 +45,15 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
     private FilterParameters filterParameters;
     //We do not require, as all openGL operations are on the current eglSurface
     //private SurfaceTexture filterTexture;
-    private FixedBaseFilter glFilterProgramWrapper;
+    private FixedBaseFilter glFilter;
 
     /**
      * Display parameters
      */
-    private int outputWidth = 720 ;
-    private int outputHeight = 480 ;
-    private int imageWidth = 720 ;
-    private int imageHeight = 480;
+    private int outputWidth ;//= 2768;
+    private int outputHeight;// = 1440;
+    private int imageWidth;
+    private int imageHeight;
 
     private Rotation rotation;
     private boolean flipHorizontal;
@@ -61,6 +64,8 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
      * OpenGL parameters
      */
     private static final int NO_IMAGE = -1;
+
+    //Vector for a quad (rectangle) to cover the whole screen
     public static final float QUAD[] = {
             -1.f, 1.f,
             -1.f, -1.f,
@@ -69,14 +74,26 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
     };
 
     private int glTextureId = NO_IMAGE;
+
+    //Will be populated from QUAD
     private FloatBuffer glFullScreenQuadBuffer;
+
+    //On each frame will be populated by loading from glRgbBuffer
     private FloatBuffer glTextureBuffer;
+
+    //On each frame will be populated from the preview data
     private IntBuffer glRgbBuffer;
 
     /**
-     * OpenGL render state
+     * OpenGL render control and queue
+     *
+     * We use a waiting variable to check if a render is waiting
+     * and a queue which should only ever hold one element for running
+     * by the EGLBridge main loop.
      */
     public boolean awaitingRenderOperation = false;
+
+    private Queue<Runnable> openGLTaskQueue;
 
     /*********************************************************************************
      *
@@ -84,10 +101,16 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
      *
      *********************************************************************************/
 
-    public FilterRenderer(FixedBaseFilter filter) {
-        setFilter(filter);
-        setupGLParameters();
+    public FilterRenderer( ) {
+        openGLTaskQueue = new LinkedList<>();
     }
+
+//    public void initFilterIfNeeded(){
+//        if (glFilter == null) {
+//            glFilter = new FixedBaseFilter();
+//        }
+//        glFilter.ifNeedInit();
+//    }
 
     private void setupGLParameters(){
         glFullScreenQuadBuffer = ByteBuffer.allocateDirect(QUAD.length * 4)
@@ -102,10 +125,9 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
     }
 
     private void setFilter(FixedBaseFilter filter){
-        glFilterProgramWrapper = filter;
-        glFilterProgramWrapper.ifNeedInit();
-        GLES20.glUseProgram(filter.getProgram());
-        glFilterProgramWrapper.onOutputSizeChanged(outputWidth, outputHeight);
+        glFilter = filter;
+        glFilter.ifNeedInit();
+        glFilter.onOutputSizeChanged(outputWidth, outputHeight);
     }
 
     void updateFilterParameters(FilterParameters filterParameters){
@@ -135,30 +157,85 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
             glRgbBuffer = IntBuffer.allocate(width * height);
         }
 
-        //Is this handled on the same thread as for GPUImage?
-        GPUImageNativeLibrary.YUVtoRBGA(data, width, height, glRgbBuffer.array());
-        glTextureId = OpenGlUtils.loadTexture(glRgbBuffer, width, height, glTextureId);
+        if (openGLTaskQueue.isEmpty()) {
+            runOnDraw(new Runnable() {
+                @Override
+                public void run() {
+                    GPUImageNativeLibrary.YUVtoRBGA(data, width, height, glRgbBuffer.array());
+                    glTextureId = OpenGlUtils.loadTexture(glRgbBuffer, width, height, glTextureId);
 
-        if (imageWidth != width) {
-            imageWidth = width;
-            imageHeight = height;
-            adjustImageScaling();
+                    if (imageWidth != width) {
+                        imageWidth = width;
+                        imageHeight = height;
+                        adjustImageScaling();
+                    }
+
+                }
+            });
         }
 
         //Request Render operation on the filter on the GL rendering thread
+        //Wont be needed when the taskQueue is working as required.
         requestRender();
 
         //worker will then schedule the call to onDraw to render the filter and
         //trigger the buffer swap
+
     }
-
-
 
     /*********************************************************************************
      *
-     *          Filter Draw Calls - including GLWorker Implementation
+     *          GLThread - handling tasks to run on the GLThread
      *
      *********************************************************************************/
+
+        protected void runOnDraw(final Runnable runnable) {
+            synchronized (openGLTaskQueue) {
+                openGLTaskQueue.add(runnable);
+            }
+        }
+
+        private void runAll(Queue<Runnable> queue) {
+            synchronized (queue) {
+                while (!queue.isEmpty()) {
+                    queue.poll().run();
+                }
+            }
+        }
+
+    /*********************************************************************************
+     *
+     *             GLWorker Implementation - The main Filter Draw Calls
+     *
+     *********************************************************************************/
+
+    public void setSize(Size size){
+        this.outputHeight = size.getHeight();
+        this.outputWidth  = size.getWidth();
+    }
+
+    //Setup GL environment
+    //From the GLThread running from the GLBridge
+    public void onCreate() {
+        setupGLParameters();
+        //Simplest zero input filter
+        setFilter(new FixedBaseFilter());
+    }
+
+    //Called by GLBridge (GLThread)
+    public void onDrawFrame() {
+
+        //Copies RGB buffer to glTextureBuffer
+        runAll(openGLTaskQueue);
+
+        //Perform the draw operation
+        if (glFilter != null) {
+            glFilter.onDraw(glTextureId, glFullScreenQuadBuffer, glTextureBuffer);
+        }
+
+        //Completed rendering one pass
+        awaitingRenderOperation = false;
+    }
 
     public void requestRender() {
         awaitingRenderOperation = true;
@@ -172,29 +249,12 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
         awaitingRenderOperation = awaitingRender;
     }
 
-    public void onCreate() {}
     public void onDispose() {}
-
-    private double _tick = 0;
-
-    public void onDrawFrame() {
-        _tick = _tick + Math.PI / 60;
-        float green = (float) ((Math.sin(_tick) + 1) / 2);
-        GLES20.glClearColor(0f, green, 0f, 1f);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
-
-
-       //Just write that glTextureId to the current eglSurface
-
-       //glFilterProgramWrapper.onDraw(glTextureId, glFullScreenQuadBuffer, glTextureBuffer);
-
-       awaitingRenderOperation = false;
-    }
 
 
     /*********************************************************************************
      *
-     *                      Still Image Capture Helper
+     *                           Bitmap helper
      *
      *********************************************************************************/
 
@@ -231,6 +291,8 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
     /*********************************************************************************
      *
      *                          Graphics helper functions
+     *
+     *                             Copied from GPUImage
      *
      *********************************************************************************/
 

@@ -5,7 +5,6 @@
 package io.flutter.plugins.camera;
 
 import io.flutter.plugins.camera.aardman.FilterParameters;
-import io.flutter.view.TextureRegistry;
 import jp.co.cyberagent.android.gpuimage.GPUImage;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -78,7 +77,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
-import java.util.function.Function;
 
 import io.flutter.plugins.camera.aardman.FilterPipelineController;
 
@@ -162,7 +160,7 @@ public class Camera
   private MethodChannel.Result flutterResult;
 
   //Aardman-Animator
-  private FilterPipelineController filterCaptureController;
+  private FilterPipelineController filterPipelineController;
   GPUImage gpuImage;
 
   public Camera(
@@ -193,7 +191,7 @@ public class Camera
     captureProps = new CameraCaptureProperties();
     cameraCaptureCallback = CameraCaptureCallback.create(this, captureTimeouts, captureProps);
 
-    this.filterCaptureController = new FilterPipelineController(flutterTexture.surfaceTexture());
+    this.filterPipelineController = new FilterPipelineController(flutterTexture.surfaceTexture());
 
     startBackgroundThread();
   }
@@ -1082,7 +1080,7 @@ public class Camera
 
 
     startCaptureWithFiltering(
-            this.filterCaptureController,
+            this.filterPipelineController,
             cameraConfigurations,
             null,
             this.dartMessenger);
@@ -1140,7 +1138,8 @@ public class Camera
     ResolutionFeature resolutionFeature = cameraFeatures.getResolution();
     Size viewSize = new Size(resolutionFeature.getPreviewSize().getWidth(),
                             resolutionFeature.getPreviewSize().getHeight());
-    Surface captureSurface = filterPipelineController.getImageReaderSurface(viewSize);
+    filterPipelineController.setSize(viewSize);
+    Surface captureSurface = filterPipelineController.getImageReaderSurface();
 
     //setup the preview request this affects global state (not encapsulated)
     configurePreviewRequestBuilderForFilteredCapture(
@@ -1362,7 +1361,7 @@ public class Camera
    HashMap map = (HashMap) arguments;
    FilterParameters parameters = new FilterParameters();
    parameters.update(map);
-   this.filterCaptureController.updateParameters(parameters);
+   this.filterPipelineController.updateParameters(parameters);
  }
 
   public void close() {

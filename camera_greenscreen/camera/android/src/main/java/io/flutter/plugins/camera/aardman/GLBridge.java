@@ -37,6 +37,8 @@ public class GLBridge implements Runnable {
         this.worker = worker;
 
         Thread thread = new Thread(this);
+        thread.setName("GLThread");
+        //Starts the GLThread in this class
         thread.start();
     }
 
@@ -78,8 +80,7 @@ public class GLBridge implements Runnable {
         Log.d(LOG_TAG, "OpenGL deinit OK.");
     }
 
-    //To replace with appropriate guarded run
-    //after QA testing
+    //As per guarded run in GPUImageFilter guarded run
     @Override
     public void run() {
         initGL();
@@ -87,20 +88,17 @@ public class GLBridge implements Runnable {
         Log.d(LOG_TAG, "OpenGL init OK.");
 
             while (running) {
-                        //Draw operations are to the current eglSurface
-                        synchronized(worker) {
-                            if (worker.isAwaitingRender()) {
-                                worker.onDrawFrame();
-                            }
-                        }
-                        //Swap from current eglSurface to display surface
-                        if (!egl.eglSwapBuffers(eglDisplay, eglSurface)) {
-                            Log.d(LOG_TAG, String.valueOf(egl.eglGetError()));
-                        }
-                        //Log.d(LOG_TAG, "In main glThread run");
-                        //worker.setAwaitingRender(false);
-                   }
-
+                //Draw operations are to the current eglSurface
+                synchronized(worker) {
+                    if (worker.isAwaitingRender()) {
+                        worker.onDrawFrame();
+                    }
+                }
+                //Swap from current eglSurface to display surface
+                if (!egl.eglSwapBuffers(eglDisplay, eglSurface)) {
+                    Log.d(LOG_TAG, String.valueOf(egl.eglGetError()));
+                }
+            }
 
 
         worker.onDispose();

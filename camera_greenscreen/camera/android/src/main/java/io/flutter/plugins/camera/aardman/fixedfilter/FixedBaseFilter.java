@@ -86,8 +86,8 @@ public class FixedBaseFilter {
         }
 
         public void onOutputSizeChanged(final int width, final int height) {
-            outputWidth = height;
-            outputHeight = width;
+            outputWidth = width;
+            outputHeight = height;
         }
 
         public void onDraw(final int textureId, final FloatBuffer cubeBuffer,

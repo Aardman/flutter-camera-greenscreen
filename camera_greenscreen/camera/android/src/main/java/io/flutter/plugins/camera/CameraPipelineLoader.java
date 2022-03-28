@@ -55,6 +55,10 @@ public class CameraPipelineLoader {
     private TextureRegistry.SurfaceTextureEntry makePipeline(){
         TextureRegistry.SurfaceTextureEntry surfaceTextureEntry =
                 textureRegistry.createSurfaceTexture();
+
+        SurfaceTexture surfaceTexture = surfaceTextureEntry.surfaceTexture();
+        surfaceTexture.setDefaultBufferSize(720, 480);
+
         return surfaceTextureEntry;
     }
 

@@ -54,10 +54,9 @@ public class FilterPipelineController {
     public FilterPipelineController(SurfaceTexture flutterTexture) {
 
         //The filter or filter group
-        FixedBaseFilter filter = new FixedBaseFilter();
-
         //eglBridge will start openGL session running
-        FilterRenderer renderer = new FilterRenderer(filter);
+        //init filter on the glThread
+        FilterRenderer renderer = new FilterRenderer();
         glWorker =  (GLWorker) renderer;
         this.eglBridge = new GLBridge(flutterTexture, glWorker);
 
@@ -69,8 +68,9 @@ public class FilterPipelineController {
      * Must be set before rendering commences
      * @param windowSize
      */
-    public void setSize(Size windowSize) {
-        this.viewSize = windowSize;
+    public void setSize(Size previewSize) {
+        this.viewSize = previewSize;
+        glWorker.setSize(previewSize);
     }
 
     /**
@@ -78,9 +78,7 @@ public class FilterPipelineController {
      *  this imageReader provides the target surface for capturing
      *  the camera input
      */
-     public Surface getImageReaderSurface(Size viewSize) {
-
-         this.viewSize = viewSize;
+     public Surface getImageReaderSurface() {
 
          this.filterImageReader =
                  ImageReader.newInstance(
