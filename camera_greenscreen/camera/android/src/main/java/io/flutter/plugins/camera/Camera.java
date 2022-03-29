@@ -1138,6 +1138,13 @@ public class Camera
     ResolutionFeature resolutionFeature = cameraFeatures.getResolution();
     Size viewSize = new Size(resolutionFeature.getPreviewSize().getWidth(),
                             resolutionFeature.getPreviewSize().getHeight());
+
+    //Set the target surface default buffer size
+    //TODO: set this from the camera features ?
+//    SurfaceTexture surfaceTexture = flutterTexture.surfaceTexture();
+//    surfaceTexture.setDefaultBufferSize(viewSize.getWidth(), viewSize.getHeight());
+
+    //Setup the rendering pipeline
     filterPipelineController.setSize(viewSize);
     Surface captureSurface = filterPipelineController.getImageReaderSurface();
 

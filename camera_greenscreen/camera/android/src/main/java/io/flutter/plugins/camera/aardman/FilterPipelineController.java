@@ -3,13 +3,11 @@ package io.flutter.plugins.camera.aardman;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.media.ImageReader;
+import android.os.Build;
 import android.util.Size;
 import android.view.Surface;
 
-import io.flutter.plugins.camera.aardman.fixedfilter.FixedBaseFilter;
-import io.flutter.plugins.camera.aardman.fixedfilter.FixedGrayscaleFilter;
-import jp.co.cyberagent.android.gpuimage.filter.GPUImageChromaKeyBlendFilter;
-import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
+import androidx.annotation.RequiresApi;
 
 /**
  * Acts as the controller of the capture flow
@@ -51,6 +49,7 @@ public class FilterPipelineController {
      *  Initialisation   *
      *********************/
 
+    @RequiresApi(api = Build.VERSION_CODES.R)
     public FilterPipelineController(SurfaceTexture flutterTexture) {
 
         //The filter or filter group

@@ -1,13 +1,24 @@
 package io.flutter.plugins.camera.aardman;
 
-import static jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil.TEXTURE_NO_ROTATION;
+import static androidx.core.content.ContextCompat.checkSelfPermission;
+import android.Manifest;
+import android.content.pm.PackageManager;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.opengl.GLES20;
+import android.os.Build;
+import android.os.Environment;
 import android.util.Log;
 import android.util.Size;
 
+import androidx.annotation.RequiresApi;
+import androidx.core.app.ActivityCompat;
+
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -15,13 +26,15 @@ import java.nio.IntBuffer;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import static jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil.TEXTURE_NO_ROTATION;
 import jp.co.cyberagent.android.gpuimage.GPUImage;
+import jp.co.cyberagent.android.gpuimage.filter.GPUImageChromaKeyBlendFilter;
+import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
 import jp.co.cyberagent.android.gpuimage.GPUImageNativeLibrary;
+import jp.co.cyberagent.android.gpuimage.filter.GPUImageToonFilter;
 import jp.co.cyberagent.android.gpuimage.util.OpenGlUtils;
 import jp.co.cyberagent.android.gpuimage.util.Rotation;
 import jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil;
-
-import io.flutter.plugins.camera.aardman.fixedfilter.*;
 
 /**
 *
@@ -30,10 +43,8 @@ import io.flutter.plugins.camera.aardman.fixedfilter.*;
  * Manage the double buffered rendering process
  * Hold a reference to the Filter/glProgram pipeline
  * Handle calls for onDraw and onPreviewFrame events for each buffer
- * Schedule rendering on GLWorker
- *
- * TODO: Is this needed? How much is done already by the client code (Plugin)
- * Handle Graphics calculations re: transforms such as rotation and scaling
+ * Schedule rendering
+ * Handle some Graphics calculations re: transforms such as rotation and scaling
  *
 */
 public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
@@ -46,13 +57,13 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
     private FilterParameters filterParameters;
     //We do not require, as all openGL operations are on the current eglSurface
     //private SurfaceTexture filterTexture;
-    private FixedBaseFilter glFilter;
+    private GPUImageFilter glFilter;
 
     /**
      * Display parameters
      */
-    private int outputWidth ;//= 2768;
-    private int outputHeight;// = 1440;
+    private int outputWidth ;
+    private int outputHeight;
     private int imageWidth;
     private int imageHeight;
 
@@ -87,13 +98,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
 
     /**
      * OpenGL render control and queue
-     *
-     * We use a waiting variable to check if a render is waiting
-     * and a queue which should only ever hold one element for running
-     * by the EGLBridge main loop.
      */
-    public boolean awaitingRenderOperation = false;
-
     private Queue<Runnable> openGLTaskQueue;
 
     /*********************************************************************************
@@ -102,16 +107,10 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
      *
      *********************************************************************************/
 
+    @RequiresApi(api = Build.VERSION_CODES.R)
     public FilterRenderer( ) {
         openGLTaskQueue = new LinkedList<>();
     }
-
-//    public void initFilterIfNeeded(){
-//        if (glFilter == null) {
-//            glFilter = new FixedBaseFilter();
-//        }
-//        glFilter.ifNeedInit();
-//    }
 
     private void setupGLParameters(){
         glFullScreenQuadBuffer = ByteBuffer.allocateDirect(QUAD.length * 4)
@@ -125,7 +124,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
         setRotation(Rotation.NORMAL, false, false);
     }
 
-    private void setFilter(FixedBaseFilter filter){
+    private void setFilter(GPUImageFilter filter){
         glFilter = filter;
         glFilter.ifNeedInit();
         glFilter.onOutputSizeChanged(outputWidth, outputHeight);
@@ -176,8 +175,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
         else {
             Log.i(TAG, "DROPPED A FRAME FROM THE PREVIEW INPUT");
         }
-
-
+ 
     }
 
     /*********************************************************************************
@@ -212,56 +210,63 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
     }
 
     //Setup GL environment
-    //From the GLThread running from the GLBridge
+    //Needs to be called from the GLThread
+    @RequiresApi(api = Build.VERSION_CODES.R)
     public void onCreate() {
         setupGLParameters();
-        //Simplest zero input filter
-        setFilter(new FixedGrayscaleFilter());
+       // setFilter(new GPUImageToonFilter());
+        createChromaKeyFilter();
     }
-
-//    @Override
-//    public void onDrawFrame(final GL10 gl) {
-//        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
-//        runAll(runOnDraw);
-//        filter.onDraw(glTextureId, glCubeBuffer, glTextureBuffer);
-//        runAll(runOnDrawEnd);
-//        if (surfaceTexture != null) {
-//            surfaceTexture.updateTexImage();
-//        }
-//    }
-
 
     //Called by GLBridge (GLThread)
     public void onDrawFrame() {
-
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
-        //Copies RGB buffer to glTextureBuffer
+        //Copy RGB buffer to glTextureBuffer
         runAll(openGLTaskQueue);
 
-        //Perform the draw operation
+        //Perform the filter operation
         if (glFilter != null) {
             glFilter.onDraw(glTextureId, glFullScreenQuadBuffer, glTextureBuffer);
-        }
+        } 
+    } 
+    
+    public void onDispose() {} 
 
-        //Completed rendering one pass
-        //awaitingRenderOperation = false;
+    /*********************************************************************************
+     *
+     *                       Create the ChromaKey filter
+     *
+     *********************************************************************************/
+
+      //Get a sample bitmap for the background  (Jurassic)
+
+      //Create a new instance of the class
+    @RequiresApi(api = Build.VERSION_CODES.R)
+    void createChromaKeyFilter() {
+           GPUImageChromaKeyBlendFilter chromaFilter =   new GPUImageChromaKeyBlendFilter();
+           Bitmap redBitmap = createImage(720, 480, Color.RED);
+//         File bitmapFile = new File(Environment.getExternalStorageDirectory() + "/" + "0000-0001/Documents/demo_720.jpg");
+//         Bitmap bitmap = BitmapFactory.decodeFile(bitmapFile.getAbsolutePath());
+           chromaFilter.setBitmap(redBitmap);
+           setFilter(chromaFilter);
+      }
+
+    /**
+     * Generates a solid colour
+     * @param width
+     * @param height
+     * @param color
+     * @return A one color image with the given width and height.
+     */
+    public static Bitmap createImage(int width, int height, int color) {
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        Paint paint = new Paint();
+        paint.setColor(color);
+        canvas.drawRect(0F, 0F, (float) width, (float) height, paint);
+        return bitmap;
     }
-
-//    public void requestRender() {
-//        awaitingRenderOperation = true;
-//    }
-//
-//    public boolean isAwaitingRender() {
-//        return awaitingRenderOperation;
-//    }
-//
-//    public void setAwaitingRender(boolean awaitingRender){
-//        awaitingRenderOperation = awaitingRender;
-//    }
-
-    public void onDispose() {}
-
 
     /*********************************************************************************
      *
@@ -297,7 +302,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
         imageHeight = bitmap.getHeight();
         adjustImageScaling();
     }
-
 
     /*********************************************************************************
      *

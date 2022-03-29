@@ -38,7 +38,6 @@ public class GLBridge implements Runnable {
 
         Thread thread = new Thread(this);
         thread.setName("GLThread");
-        //Starts the GLThread in this class
         thread.start();
     }
 
@@ -86,21 +85,13 @@ public class GLBridge implements Runnable {
         initGL();
         worker.onCreate();
         Log.d(LOG_TAG, "OpenGL init OK.");
-
             while (running) {
-                //Draw operations are to the current eglSurface
-//                synchronized(worker) {
-//                    if (worker.isAwaitingRender()) {
-                 worker.onDrawFrame();  //if there is something to do, do it.... queued on GLThread
-//                    }
-//                }
+                 worker.onDrawFrame();
                 //Swap from current eglSurface to display surface
                 if (!egl.eglSwapBuffers(eglDisplay, eglSurface)) {
                     Log.d(LOG_TAG, String.valueOf(egl.eglGetError()));
                 }
             }
-
-
         worker.onDispose();
         deinitGL();
     }
