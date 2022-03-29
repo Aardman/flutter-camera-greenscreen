@@ -89,11 +89,11 @@ public class GLBridge implements Runnable {
 
             while (running) {
                 //Draw operations are to the current eglSurface
-                synchronized(worker) {
-                    if (worker.isAwaitingRender()) {
-                        worker.onDrawFrame();
-                    }
-                }
+//                synchronized(worker) {
+//                    if (worker.isAwaitingRender()) {
+                 worker.onDrawFrame();  //if there is something to do, do it.... queued on GLThread
+//                    }
+//                }
                 //Swap from current eglSurface to display surface
                 if (!egl.eglSwapBuffers(eglDisplay, eglSurface)) {
                     Log.d(LOG_TAG, String.valueOf(egl.eglGetError()));

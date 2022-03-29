@@ -5,6 +5,7 @@ import static jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil.TEXTURE
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.opengl.GLES20;
+import android.util.Log;
 import android.util.Size;
 
 import java.nio.ByteBuffer;
@@ -156,9 +157,8 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
         if (glRgbBuffer == null) {
             glRgbBuffer = IntBuffer.allocate(width * height);
         }
-
         if (openGLTaskQueue.isEmpty()) {
-            runOnDraw(new Runnable() {
+            appendToTaskQueue(new Runnable() {
                 @Override
                 public void run() {
                     GPUImageNativeLibrary.YUVtoRBGA(data, width, height, glRgbBuffer.array());
@@ -173,13 +173,10 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
                 }
             });
         }
+        else {
+            Log.i(TAG, "DROPPED A FRAME FROM THE PREVIEW INPUT");
+        }
 
-        //Request Render operation on the filter on the GL rendering thread
-        //Wont be needed when the taskQueue is working as required.
-        requestRender();
-
-        //worker will then schedule the call to onDraw to render the filter and
-        //trigger the buffer swap
 
     }
 
@@ -189,7 +186,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
      *
      *********************************************************************************/
 
-        protected void runOnDraw(final Runnable runnable) {
+        protected void appendToTaskQueue(final Runnable runnable) {
             synchronized (openGLTaskQueue) {
                 openGLTaskQueue.add(runnable);
             }
@@ -219,11 +216,25 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
     public void onCreate() {
         setupGLParameters();
         //Simplest zero input filter
-        setFilter(new FixedBaseFilter());
+        setFilter(new FixedGrayscaleFilter());
     }
+
+//    @Override
+//    public void onDrawFrame(final GL10 gl) {
+//        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
+//        runAll(runOnDraw);
+//        filter.onDraw(glTextureId, glCubeBuffer, glTextureBuffer);
+//        runAll(runOnDrawEnd);
+//        if (surfaceTexture != null) {
+//            surfaceTexture.updateTexImage();
+//        }
+//    }
+
 
     //Called by GLBridge (GLThread)
     public void onDrawFrame() {
+
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
         //Copies RGB buffer to glTextureBuffer
         runAll(openGLTaskQueue);
@@ -234,20 +245,20 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
         }
 
         //Completed rendering one pass
-        awaitingRenderOperation = false;
+        //awaitingRenderOperation = false;
     }
 
-    public void requestRender() {
-        awaitingRenderOperation = true;
-    }
-
-    public boolean isAwaitingRender() {
-        return awaitingRenderOperation;
-    }
-
-    public void setAwaitingRender(boolean awaitingRender){
-        awaitingRenderOperation = awaitingRender;
-    }
+//    public void requestRender() {
+//        awaitingRenderOperation = true;
+//    }
+//
+//    public boolean isAwaitingRender() {
+//        return awaitingRenderOperation;
+//    }
+//
+//    public void setAwaitingRender(boolean awaitingRender){
+//        awaitingRenderOperation = awaitingRender;
+//    }
 
     public void onDispose() {}
 
