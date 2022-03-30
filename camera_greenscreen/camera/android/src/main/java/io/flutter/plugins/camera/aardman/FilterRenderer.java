@@ -55,8 +55,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
      * Dependencies
      */
     private FilterParameters filterParameters;
-    //We do not require, as all openGL operations are on the current eglSurface
-    //private SurfaceTexture filterTexture;
     private GPUImageFilter glFilter;
 
     /**
@@ -97,7 +95,9 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
     private IntBuffer glRgbBuffer;
 
     /**
-     * OpenGL render control and queue
+     * OpenGL render control and queue, this acts as the buffer for frames
+     * from the camera, access is synchronised, so no locking is needed at draw time
+     * from the main openGL render loop
      */
     private Queue<Runnable> openGLTaskQueue;
 
