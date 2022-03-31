@@ -51,7 +51,8 @@ public class StillImageFilterProcessor implements Runnable {
 
         //Run a filter operation on the filter pipeline using the captured image
         filterPipeline.filterStillImage(bitmap, () -> {
-            Bitmap filteredBitmap = filterPipeline.getLastFilteredResult();
+             //Runs on GLThread, filteredBitmap will be available.
+             Bitmap filteredBitmap = filterPipeline.getLastFilteredResult();
 
              backgroundHandler.post(
                   new BitmapSaver (
