@@ -60,76 +60,7 @@ public class StillImageFilterProcessor implements Runnable {
                       callback
                    )
              );
-
         });
-
     }
-
 }
 
-
-          //request filtering using the current filter parameters
-//          filterPipeline.filterStillImage(bitmap, new Runnable(
-//
-//                  process the output from the filter that is provided in this runnable callback
-//
-//        FileOutputStream output = null;
-//        t  ry {
-//                   output = ImageSaver.FileOutputStreamFactory.create(file);
-//                    output.write(filteredBytes);
-//
-//                    super.callback.onComplete(file.getAbsolutePath());
-//
-//                } catch (IOException e) {
-//                    callback.onError("IOError", "Failed saving image");
-//                } finally {
-//                    super.image.close();
-//                    if (null != output) {
-//                        try {
-//                            output.close();
-//                        } catch (IOException e) {
-//                            super.callback.onError("cameraAccess", e.getMessage());
-//                        }
-//                    }
-//                }
-//          });
-
-
-          /*
-            public void run() {
-    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-    byte[] bytes = new byte[buffer.remaining()];
-    buffer.get(bytes);
-    FileOutputStream output = null;
-    try {
-      output = FileOutputStreamFactory.create(file);
-      output.write(bytes);
-
-      callback.onComplete(file.getAbsolutePath());
-
-    } catch (IOException e) {
-      callback.onError("IOError", "Failed saving image");
-    } finally {
-      image.close();
-      if (null != output) {
-        try {
-          output.close();
-        } catch (IOException e) {
-          callback.onError("cameraAccess", e.getMessage());
-        }
-      }
-    }
-  }
-           */
-
-
-//    //
-//    public class StillImageFilteringHandler {
-//
-//        public onComplete(Bitmap filteredBitmap){
-//
-//        }
-//
-//
-//
-//    }
