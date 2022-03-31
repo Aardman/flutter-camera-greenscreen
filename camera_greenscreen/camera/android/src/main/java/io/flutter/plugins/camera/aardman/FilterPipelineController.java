@@ -3,13 +3,13 @@ package io.flutter.plugins.camera.aardman;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.media.ImageReader;
-import android.os.Build;
 import android.util.Size;
 import android.view.Surface;
 import android.graphics.Bitmap;
 
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+
+import java.util.HashMap;
 
 /**
  * Acts as the controller of the capture flow
@@ -51,30 +51,17 @@ public class FilterPipelineController {
      */
     Size viewSize;
 
-    /**
-     * Still image parameters
-     */
-    @Nullable
-    Size stillImageSize;
-    @Nullable
-    byte[] stillImageBytes;
-    @Nullable
-    Runnable onStillImageAvailable;
-
     /*********************
      *  Initialisation   *
      *********************/
 
     public FilterPipelineController(SurfaceTexture flutterTexture) {
-
         //The filter or filter group
         //eglBridge will start openGL session running
         //init filter on the glThread
         filterRenderer = new FilterRenderer();
         GLWorker glWorker = (GLWorker) filterRenderer;
         this.eglBridge = new GLBridge(flutterTexture, glWorker);
-        //TODO:
-        // filterRenderer.initialiseParameters(new FilterParameters());
     }
 
     /**
@@ -129,11 +116,11 @@ public class FilterPipelineController {
      *      Still Image Handling      *
      **********************************/
      public void filterStillImage(Bitmap stillImageBitmap, Runnable stillImageCompletion){
-         filterRenderer.scheduleStillImageFiltering(stillImageBitmap, stillImageCompletion);
+         filterRenderer.onCaptureFrame(stillImageBitmap, stillImageCompletion);
      }
 
     public Bitmap getLastFilteredResult(){
-         return filterRenderer.getStillImageBitmap();
+         return filterRenderer.getFilteredCaptureFrame();
     }
 
     /*********************
@@ -141,8 +128,7 @@ public class FilterPipelineController {
      *********************/
 
     public void updateParameters(FilterParameters parameters){
-        //TODO:
-        //this.filterRenderer.updateFilterParameters(parameters);
+        filterRenderer.updateFilterParameters(parameters);
     }
 
     /*********************

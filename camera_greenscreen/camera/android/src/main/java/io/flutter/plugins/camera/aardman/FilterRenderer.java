@@ -9,12 +9,15 @@ import android.os.Build;
 import android.util.Log;
 import android.util.Size;
 
+import androidx.annotation.ColorInt;
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -134,6 +137,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
     public FilterRenderer( ) {
         openGLTaskQueue = new LinkedList<>();
         openGLStillImageTaskQueue = new LinkedList<>();
+        filterParameters = new FilterParameters();
     }
 
     private void setupGLObjects(){
@@ -146,13 +150,12 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
         glTextureBuffer = ByteBuffer.allocateDirect(TEXTURE_NO_ROTATION.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer();
-        setRotation(Rotation.NORMAL, false, false);
 
         glCaptureTextureBuffer = ByteBuffer.allocateDirect(TEXTURE_NO_ROTATION.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer();
-        setRotation(Rotation.NORMAL, false, false);
 
+        setRotation(Rotation.NORMAL, false, false);
     }
 
     private void setFilter(GPUImageFilter filter){
@@ -161,14 +164,28 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
         glFilter.onOutputSizeChanged(outputWidth, outputHeight);
     }
 
-    void updateFilterParameters(FilterParameters filterParameters){
-          ///update input to the filter
-          this.filterParameters = filterParameters;
-      }
 
-      void initialiseParameters(FilterParameters filterParameters){
-          this.filterParameters = filterParameters;
-      }
+    /*********************************************************************************
+     *                             Filter Parameters
+     *********************************************************************************/
+
+    void updateFilterParameters(FilterParameters parameters){
+
+        GPUImageChromaKeyBlendFilter filter = (GPUImageChromaKeyBlendFilter) glFilter;
+
+        if(filterParameters.replacementColour != parameters.replacementColour){
+            float [] colour = filterParameters.getColorToReplace();
+            filter.setColorToReplace(colour[0], colour[1], colour[2]);
+        }
+
+        if(!filterParameters.backgroundImage.equals(parameters.backgroundImage)){
+            //update background image
+            //Bitmap bitmap = getBitmap(parameters.backgroundImage);
+            //filter.setBitmap(bitmap);
+        }
+
+        filterParameters = parameters;
+    }
 
 
     /*********************************************************************************
@@ -242,7 +259,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
     @RequiresApi(api = Build.VERSION_CODES.R)
     public void onCreate() {
         setupGLObjects();
-       // setFilter(new GPUImageToonFilter());
         createChromaKeyFilter();
     }
 
@@ -277,16 +293,13 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
 
     //When filtering, swap rendering buffer and use a separate context
     //for drawing, then swap back on the next trip through the render loop
-    public void filterStillImage(){
-
-        //TODO: Delete demo image
-       // stillImageBitmap = createImage(outputWidth, outputHeight, Color.BLUE);
+    public void onDrawCaptureFrame(){
 
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
         //Perform the filter operation (GPUImage had to do this 2x, bug?)
         if (glFilter != null) {
-            glFilter.onDraw(glCaptureTextureId, glFullScreenQuadBuffer, glCaptureTextureBuffer);
+            glFilter.onOutputSizeChanged(outputWidth, outputHeight);
             glFilter.onDraw(glCaptureTextureId, glFullScreenQuadBuffer, glCaptureTextureBuffer);
         }
 
@@ -306,7 +319,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
      *                public API to the FilterPipelineController
      *********************************************************************************/
 
-    public void  scheduleStillImageFiltering(Bitmap sourceBitmap, Runnable stillImageCompletion) {
+    public void onCaptureFrame(Bitmap sourceBitmap, Runnable stillImageCompletion) {
         //prepare the call to cause a still image renderpass to take place
         this.stillImageCompletion = stillImageCompletion;
         stillImageBitmap = sourceBitmap; //for debugging  only we can check the input
@@ -314,20 +327,14 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
         if (glRgbPreviewBuffer == null) {
             glRgbPreviewBuffer = IntBuffer.allocate(sourceBitmap.getWidth() * sourceBitmap.getHeight());
         }
-
-        //Let the openGLQueue know that a capture frame is available
-        appendToTaskQueue(() -> {
-            //prepare and set the glTexture to the input bitmap
-            //for use in the filtering process
-            synchronized (this) {
-                loadCaptureBitmapIntoTexture(sourceBitmap);
-                captureFrameReadyForFiltering = true;
-            }
-        }, openGLTaskQueue);
+        synchronized (this) {
+            loadCaptureBitmapIntoTexture(sourceBitmap);
+            captureFrameReadyForFiltering = true;
+        }
 
     }
 
-    public Bitmap getStillImageBitmap(){
+    public Bitmap getFilteredCaptureFrame(){
         return stillImageBitmap;
     }
 
@@ -356,6 +363,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
                 resizedBitmap != null ? resizedBitmap : bitmap,
                 glCaptureTextureId,
                 recycle);
+
         if (resizedBitmap != null) {
             resizedBitmap.recycle();
         }
@@ -380,6 +388,8 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
 //         File bitmapFile = new File(Environment.getExternalStorageDirectory() + "/" + "0000-0001/Documents/demo_720.jpg");
 //         Bitmap bitmap = BitmapFactory.decodeFile(bitmapFile.getAbsolutePath());
            chromaFilter.setBitmap(redBitmap);
+           float [] colour = filterParameters.getColorToReplace();
+           chromaFilter.setColorToReplace(colour[0], colour[1], colour[2]);
            setFilter(chromaFilter);
       }
 
@@ -398,7 +408,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
         canvas.drawRect(0F, 0F, (float) width, (float) height, paint);
         return bitmap;
     }
-
 
     /*********************************************************************************
      *
@@ -457,6 +466,8 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
             glFullScreenQuadBuffer.put(cube).position(0);
             glTextureBuffer.clear();
             glTextureBuffer.put(textureCords).position(0);
+            glCaptureTextureBuffer.clear();
+            glCaptureTextureBuffer.put(textureCords).position(0);
         }
 
         public void setScaleType(GPUImage.ScaleType scaleType) {
@@ -495,47 +506,5 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
         public boolean isFlippedVertically() {
             return flipVertical;
         }
-
-
-
-    /*********************************************************************************
-     *
-     *                 GLSurfaceView.Renderer Implementation
-     *
-     *            TODO delete after implementing buffer draw to still image
-     *
-     *********************************************************************************/
-//
-//    @Override
-//    public void onSurfaceCreated(final GL10 unused, final EGLConfig config) {
-//        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
-//        glFilter.ifNeedInit();
-//    }
-//
-//    @Override
-//    public void onSurfaceChanged(final GL10 gl, final int width, final int height) {
-//        outputWidth = width;
-//        outputHeight = height;
-//        GLES20.glViewport(0, 0, width, height);
-//        GLES20.glUseProgram(glFilter.getProgram());
-//        glFilter.onOutputSizeChanged(width, height);
-//        adjustImageScaling();
-//        synchronized (surfaceChangedWaiter) {
-//            surfaceChangedWaiter.notifyAll();
-//        }
-//    }
-
-//    @Override
-//    public void onDrawFrame(final GL10 gl) {
-//        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
-//        runAll(openGLTaskQueue);
-//        glFilter.onDraw(glTextureId, glFullScreenQuadBuffer, glTextureBuffer);
-//        runAll(runOnDrawEnd);
-//        if (surfaceTexture != null) {
-//            surfaceTexture.updateTexImage();
-//        }
-//    }
-
-
 
 }

@@ -1,9 +1,14 @@
 package io.flutter.plugins.camera.aardman;
 
 
+import android.graphics.Color;
+
+import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.logging.Filter;
 
 /**
  *  FilterParameters is a DAO for the updatable parameters for the Filters
@@ -11,39 +16,34 @@ import java.util.HashMap;
 
 public final class FilterParameters {
 
-    HueRange chromaKeyRange = new HueRange(0.25, 0.45);
-    Double sensitivity = 1.0;
+    float  []  replacementColour = {0.0f, 1.0f, 0.0f} ;
     String   backgroundImage = null;
-    // ArrayList maskBounds ;
 
     public FilterParameters() {}
 
-    public void update(@NonNull HashMap arguments) {
-        System.out.println("🤖 updating filter parameters with\n" + arguments);
-        String bg = (String) arguments.get("backGroundImage");
-        if (bg != null) { this.backgroundImage = bg; }
-        ArrayList hueRange =  (ArrayList) arguments.get("hueRange");
-        Double low = (Double) hueRange.get(0);
-        Double high = (Double) hueRange.get(1);
-        if (hueRange != null) {
-            this.chromaKeyRange = new HueRange(low, high);
+    public FilterParameters(ArrayList colours, String backgroundImage){
+        setReplacementColour(colours);
+        setBackgroundImage(backgroundImage);
+    }
+
+     public float[] getColorToReplace(){
+         return replacementColour;
+     }
+
+     public void setReplacementColour(ArrayList<Integer>  colours){
+        if (colours != null) {
+            float [] newColours = new float[3];
+            for (int i = 0; i < colours.size() && i <= 2; i++) {
+                newColours[i] = colours.get(i).floatValue() / 255.0f;
+            }
+            replacementColour = newColours;
         }
      }
 
+     public void setBackgroundImage(String path){
+        backgroundImage = path;
+     }
+
+
 }
 
- class HueRange {
-
-        private Double lowValue;
-        private Double highValue = 0.0;  //may not be used depending on filter choice
-
-        HueRange(Double lowValue, Double highValue){
-            this.lowValue = lowValue;
-            this.highValue = highValue;
-        }
-
-        Double getHue() {
-            return lowValue;
-        }
-
-    }

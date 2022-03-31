@@ -2,7 +2,6 @@ package io.flutter.plugins.camera.aardman;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLUtils;
@@ -64,11 +63,12 @@ public class GLBridge implements Runnable {
 
     private void performStillImageFiltering(){
         makeStillImagePixelBufferCurrent();
-        worker.filterStillImage();
+        worker.onDrawCaptureFrame();
         //Read the pixels from the current eglPixelBufferSurface into a byte buffer
         gl.glReadPixels(0,0, captureWidth, captureHeight, format, pixelBufferType, byteBuffer);
-        // Bitmap bitmap = createBitmap();
-        Bitmap bitmap = createImage(captureWidth, captureHeight, Color.YELLOW);
+
+        Bitmap bitmap = createBitmap();
+        // Bitmap bitmap = createImage(captureWidth, captureHeight, Color.YELLOW);
         worker.setResult(bitmap);
         //This needs to fire the filtering, then perform the read and bitmap generation?
         makeFlutterOutputCurrent();
@@ -90,8 +90,7 @@ public class GLBridge implements Runnable {
         return bitmap;
     }
 
-
-
+    //TODO: Delete after debugging
     //This is copied from the GPUImage Pixelbuffer class, but it is unclear how this
     //works.
     //It could be that Bitmap.createBitmap, as a side effect, uses the current openGL surface
@@ -176,6 +175,9 @@ public class GLBridge implements Runnable {
 
         //This is purely for rendering out full size captures
         eglPixelBufferSurface = egl.eglCreatePbufferSurface(eglDisplay, eglConfig,null);
+        if (eglPixelBufferSurface == null || eglPixelBufferSurface == EGL10.EGL_NO_SURFACE) {
+            throw new RuntimeException("GL Error: " + GLUtils.getEGLErrorString(egl.eglGetError()));
+        }
 
         makeFlutterOutputCurrent();
 
@@ -205,6 +207,7 @@ public class GLBridge implements Runnable {
     private void deinitGL() {
         egl.eglMakeCurrent(eglDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
         egl.eglDestroySurface(eglDisplay, eglSurface);
+        egl.eglDestroySurface(eglDisplay, eglPixelBufferSurface);
         egl.eglDestroyContext(eglDisplay, eglContext);
         egl.eglTerminate(eglDisplay);
         Log.d(LOG_TAG, "OpenGL deinit OK.");
@@ -259,7 +262,6 @@ public class GLBridge implements Runnable {
                 EGL10.EGL_NONE
         };
     }
-
 
 
 }

@@ -8,7 +8,7 @@ import android.util.Size;
 interface GLWorker  {
     public Boolean rendererInPreviewMode();
     //TODO: delete this
-    public void filterStillImage();
+    public void onDrawCaptureFrame();
     public void setResult(Bitmap bitmap);
     public void setSize(Size size);
     public void onCreate();
