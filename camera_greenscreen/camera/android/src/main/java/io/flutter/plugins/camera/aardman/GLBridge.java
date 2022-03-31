@@ -1,14 +1,14 @@
 package io.flutter.plugins.camera.aardman;
 
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
-import android.opengl.GLDebugHelper;
 import android.opengl.GLUtils;
 import android.util.Log;
 import android.util.Size;
 
-import java.io.Writer;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
 import javax.microedition.khronos.egl.EGL10;
@@ -16,10 +16,8 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.egl.EGLSurface;
-import javax.microedition.khronos.opengles.GL;
 import javax.microedition.khronos.opengles.GL10;
 
-import jp.co.cyberagent.android.gpuimage.GLTextureView;
 import jp.co.cyberagent.android.gpuimage.GPUImageNativeLibrary;
 
 public class GLBridge implements Runnable {
@@ -49,7 +47,7 @@ public class GLBridge implements Runnable {
         Log.d(LOG_TAG, "OpenGL init OK.");
         while (running) {
             //if performing the filtering, render to the pixel buffer surface
-            if (!worker.isFilteringStillImage()){
+            if (worker.rendererInPreviewMode()){
                 worker.onDrawFrame();
                 //Swap from current eglSurface to display surface
                 if (!egl.eglSwapBuffers(eglDisplay, eglSurface)) {
@@ -69,11 +67,29 @@ public class GLBridge implements Runnable {
         worker.filterStillImage();
         //Read the pixels from the current eglPixelBufferSurface into a byte buffer
         gl.glReadPixels(0,0, captureWidth, captureHeight, format, pixelBufferType, byteBuffer);
-        Bitmap bitmap = createBitmap();
+        // Bitmap bitmap = createBitmap();
+        Bitmap bitmap = createImage(captureWidth, captureHeight, Color.YELLOW);
         worker.setResult(bitmap);
         //This needs to fire the filtering, then perform the read and bitmap generation?
         makeFlutterOutputCurrent();
     }
+
+    /**
+     * Generates a solid colour
+     * @param width
+     * @param height
+     * @param color
+     * @return A one color image with the given width and height.
+     */
+    public static Bitmap createImage(int width, int height, int color) {
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        Paint paint = new Paint();
+        paint.setColor(color);
+        canvas.drawRect(0F, 0F, (float) width, (float) height, paint);
+        return bitmap;
+    }
+
 
 
     //This is copied from the GPUImage Pixelbuffer class, but it is unclear how this
@@ -120,7 +136,7 @@ public class GLBridge implements Runnable {
         captureHeight = size.getHeight();
         captureWidth  = size.getWidth();
         int capacity  = captureHeight * captureWidth * bytesPerPixel;
-        byteBuffer = ByteBuffer.allocateDirect(capacity);
+        byteBuffer = ByteBuffer.allocate(capacity);
     }
 
 

@@ -6,7 +6,7 @@ import android.opengl.GLSurfaceView;
 import android.util.Size;
 
 interface GLWorker  {
-    public Boolean isFilteringStillImage();
+    public Boolean rendererInPreviewMode();
     //TODO: delete this
     public void filterStillImage();
     public void setResult(Bitmap bitmap);
