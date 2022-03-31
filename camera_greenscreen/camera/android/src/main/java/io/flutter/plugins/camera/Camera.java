@@ -264,12 +264,18 @@ public class Camera
     }
 
     // Always capture using JPEG format.
+    Size captureSize = new Size(resolutionFeature.getCaptureSize().getWidth(),
+                            resolutionFeature.getCaptureSize().getHeight());
     pictureImageReader =
             ImageReader.newInstance(
-                    resolutionFeature.getCaptureSize().getWidth(),
-                    resolutionFeature.getCaptureSize().getHeight(),
+                    captureSize.getWidth(),
+                    captureSize.getHeight(),
                     ImageFormat.JPEG,
                     1);
+
+    //Capture size for openGL should match this size if using the
+    //pictureImageReader as a source of the still captures
+    filterPipelineController.setStillCaptureSize(captureSize);
 
     // For image streaming, use the provided image format or fall back to YUV420.
     Integer imageFormat = supportedImageFormats.get(imageFormatGroup);

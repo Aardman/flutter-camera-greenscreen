@@ -27,30 +27,39 @@ import androidx.annotation.RequiresApi;
  */
 public class FilterPipelineController {
 
-    /** The camera captures to a surface managed by this imageReader */
+    /**
+     * The camera captures to a surface managed by this imageReader
+     */
     ImageReader filterImageReader;
 
-    /** The eglBridge manages the OpenGL pipeline */
+    /**
+     * The eglBridge manages the OpenGL pipeline
+     */
     GLBridge eglBridge;
 
     /**
-     *
      * The current openGL rendering thread
-     *
+     * <p>
      * The renderer that takes imageReader captured frames and applies the filtering
-     *
+     * <p>
      * That stage could be the GPUImageFilters, or native as in Chornenko example
-     *
-     * */
+     */
     FilterRenderer filterRenderer;
 
-    /** Current window dimensions */
+    /**
+     * Current window dimensions
+     */
     Size viewSize;
 
-    /** Still image parameters */
-    @Nullable Size stillImageSize;
-    @Nullable byte [] stillImageBytes;
-    @Nullable Runnable onStillImageAvailable;
+    /**
+     * Still image parameters
+     */
+    @Nullable
+    Size stillImageSize;
+    @Nullable
+    byte[] stillImageBytes;
+    @Nullable
+    Runnable onStillImageAvailable;
 
     /*********************
      *  Initialisation   *
@@ -62,20 +71,29 @@ public class FilterPipelineController {
         //eglBridge will start openGL session running
         //init filter on the glThread
         filterRenderer = new FilterRenderer();
-        GLWorker glWorker =  (GLWorker) filterRenderer;
+        GLWorker glWorker = (GLWorker) filterRenderer;
         this.eglBridge = new GLBridge(flutterTexture, glWorker);
-
         //TODO:
         // filterRenderer.initialiseParameters(new FilterParameters());
     }
 
     /**
      * Must be set before rendering commences
-     * @param windowSize
+     *
+     * @param previewSize
      */
     public void setSize(Size previewSize) {
         this.viewSize = previewSize;
         ((GLWorker) filterRenderer).setSize(previewSize);
+    }
+
+    /**
+     * Must be set before still capture commences
+     *
+     * @param captureSize
+     */
+    public void setStillCaptureSize(Size captureSize) {
+       this.eglBridge.setupStillCapture(captureSize);
     }
 
     /**

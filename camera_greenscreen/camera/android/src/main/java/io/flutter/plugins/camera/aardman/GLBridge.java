@@ -5,6 +5,7 @@ import android.graphics.SurfaceTexture;
 import android.opengl.GLDebugHelper;
 import android.opengl.GLUtils;
 import android.util.Log;
+import android.util.Size;
 
 import java.io.Writer;
 
@@ -40,7 +41,6 @@ public class GLBridge implements Runnable {
     private int captureHeight;
     private int format; //GL format
     private int pixelBufferSize;
-
 
 
     public GLBridge(SurfaceTexture flutterTexture,  GLWorker worker) {
@@ -94,6 +94,12 @@ public class GLBridge implements Runnable {
         }
     }
 
+    public void setupStillCapture(Size size){
+        captureHeight = size.getHeight();
+        captureWidth  = size.getWidth();
+        pixelBufferSize = captureHeight * captureWidth;
+    }
+
     private void deinitGL() {
         egl.eglMakeCurrent(eglDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
         egl.eglDestroySurface(eglDisplay, eglSurface);
@@ -113,8 +119,8 @@ public class GLBridge implements Runnable {
                 if (worker.isFilteringStillImage()){
                     makeStillImagePixelBufferCurrent();
                     //Read pixels to buffer that can be used to pull bitmaps
-//                    gl.glReadPixels(0,0, captureWidth, captureHeight, format, pixelBufferSize, eglPixelBufferSurface);
-//                    createBitmapFromPixelBuffer();
+//                  gl.glReadPixels(0,0, captureWidth, captureHeight, format, pixelBufferSize, eglPixelBufferSurface);
+//                  createBitmapFromPixelBuffer();
                     worker.filterStillImage(null); //will just read the current buffer data into the output bitmap
                     makeFlutterOutputCurrent();
                 }
