@@ -8,7 +8,8 @@ import android.util.Size;
 interface GLWorker  {
     public Boolean isFilteringStillImage();
     //TODO: delete this
-    public void filterStillImage(Bitmap filteredBitmap);
+    public void filterStillImage();
+    public void setResult(Bitmap bitmap);
     public void setSize(Size size);
     public void onCreate();
     public void onDispose();

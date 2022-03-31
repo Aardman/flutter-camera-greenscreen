@@ -239,32 +239,36 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
 
     //When filtering, swap rendering buffer and use a separate context
     //for drawing, then swap back on the next trip through the render loop
-    public void filterStillImage(Bitmap filteredBitmap){
-          //stillImageBitmap = filteredBitmap;
+    public void filterStillImage(){
 
-          stillImageBitmap = createImage(outputWidth, outputHeight, Color.BLUE);
+        //TODO: Delete demo image
+        // stillImageBitmap = createImage(outputWidth, outputHeight, Color.BLUE);
 
-//        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
-//
-//        //Copy RGB buffer to glTextureBuffer
-//        runAll(openGLTaskQueue);
-//
-//        //Perform the filter operation
-//        if (glFilter != null) {
-//            glFilter.onDraw(glTextureId, glFullScreenQuadBuffer, glTextureBuffer);
-//            glFilter.onDraw(glTextureId, glFullScreenQuadBuffer, glTextureBuffer);
-//        }
-          isProcessingStillImageFrame = false;
-          Log.i(TAG, "SIMULATE STILL IMAGE FILTERING AND CAPTURE");
-           appendToTaskQueue(new Runnable() {
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
+
+        //Copy RGB buffer to glTextureBuffer
+        runAll(openGLStillImageTaskQueue);
+
+        //Perform the filter operation (GPUImage had to do this 2x, bug?)
+        if (glFilter != null) {
+            glFilter.onDraw(glTextureId, glFullScreenQuadBuffer, glTextureBuffer);
+        }
+
+        isProcessingStillImageFrame = false;
+        Log.i(TAG, "Completed still image render pass");
+
+    }
+
+    public void setResult(Bitmap bitmap){
+        stillImageBitmap = bitmap;
+
+        appendToTaskQueue(new Runnable() {
             @Override
             public void run() {
                 stillImageCompletion.run();
             }
         }, openGLStillImageTaskQueue);
-
     }
-
 
     public void onDispose() {} 
 
