@@ -5,6 +5,7 @@
 package io.flutter.plugins.camera;
 
 import io.flutter.plugins.camera.aardman.FilterParameters;
+import io.flutter.plugins.camera.aardman.StillImageFilterProcessor;
 import jp.co.cyberagent.android.gpuimage.GPUImage;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -191,7 +192,7 @@ public class Camera
     captureProps = new CameraCaptureProperties();
     cameraCaptureCallback = CameraCaptureCallback.create(this, captureTimeouts, captureProps);
 
-    this.filterPipelineController = new FilterPipelineController(flutterTexture.surfaceTexture());
+    filterPipelineController = new FilterPipelineController(flutterTexture.surfaceTexture());
 
     startBackgroundThread();
   }
@@ -359,6 +360,7 @@ public class Camera
           throws CameraAccessException {
     createCaptureSession(templateType, null, surfaces);
   }
+
 
   private void createCaptureSession(
           int templateType, Runnable onSuccessCallback, Surface... surfaces)
@@ -1083,7 +1085,8 @@ public class Camera
             this.filterPipelineController,
             cameraConfigurations,
             null,
-            this.dartMessenger);
+            this.dartMessenger,
+            pictureImageReader.getSurface());
   }
 
   /**
@@ -1125,7 +1128,8 @@ public class Camera
   public void startCaptureWithFiltering(FilterPipelineController filterPipelineController,
                                            FilterCameraConfigurations filterCameraConfigurations,
                                            @Nullable Runnable onSuccessCallback,
-                                           DartMessenger messenger)
+                                           DartMessenger messenger,
+                                           Surface stillPictureImageReaderSurface)
           throws CameraAccessException {
 
     assert(filterPipelineController != null);
@@ -1151,6 +1155,7 @@ public class Camera
     //setup the preview request this affects global state (not encapsulated)
     configurePreviewRequestBuilderForFilteredCapture(
             captureSurface,
+            stillPictureImageReaderSurface,
             filterCameraConfigurations
          );
 
@@ -1163,7 +1168,7 @@ public class Camera
     assert(captureStateCallback != null);
 
     if (VERSION.SDK_INT >= VERSION_CODES.P) {
-       startFilteredCaptureSession(filterCameraConfigurations.cameraDeviceDriver, captureSurface, captureStateCallback);
+       startFilteredCaptureSession(filterCameraConfigurations.cameraDeviceDriver, captureSurface, stillPictureImageReaderSurface, captureStateCallback);
     } else {
       Log.i(TAG, "Failed to start filtered capture for legacy android platforms - not implemented");
       // startSessionForLegacyVersions();
@@ -1173,10 +1178,12 @@ public class Camera
   @RequiresApi(api = VERSION_CODES.P)
   void startFilteredCaptureSession(CameraDevice cameraDevice,
                                    Surface captureSurface,
+                                   Surface stillPictureImageSurface,
                                    CameraCaptureSession.StateCallback captureStateCallback)
           throws CameraAccessException {
     List<OutputConfiguration> configs = new ArrayList<>();
     configs.add(new OutputConfiguration(captureSurface));
+    configs.add(new OutputConfiguration(stillPictureImageSurface));
     SessionConfiguration sessionConfiguration = new SessionConfiguration(
             SessionConfiguration.SESSION_REGULAR,
             configs,
@@ -1187,6 +1194,7 @@ public class Camera
 
 
   void configurePreviewRequestBuilderForFilteredCapture(Surface captureSurface,
+                                                        Surface stillPictureImageReaderSurface,
                                                         FilterCameraConfigurations configurations) throws CameraAccessException {
 
     // Create the preview request builder and assign it to the local state
@@ -1194,6 +1202,9 @@ public class Camera
 
     //set the capture surface for the builder
     captureRequestBuilder.addTarget(captureSurface);
+
+    //set the surface for the still image capture if the current template is capture only
+    //captureRequestBuilder.addTarget(stillPictureImageReaderSurface);
 
     //Set global state as this is used by different phases of operation, refreshing capture etc.
     this.previewRequestBuilder = captureRequestBuilder;
@@ -1258,8 +1269,6 @@ public class Camera
   /**
    *  Aardman-animator :  End of Filter initialisation of capture pipeline
    */
-
-
   public void startPreviewWithImageStream(EventChannel imageStreamChannel)
       throws CameraAccessException {
     createCaptureSession(CameraDevice.TEMPLATE_RECORD, imageStreamReader.getSurface());
@@ -1287,11 +1296,12 @@ public class Camera
   public void onImageAvailable(ImageReader reader) {
     Log.i(TAG, "onImageAvailable");
 
-    backgroundHandler.post(
-        new ImageSaver(
+     backgroundHandler.post(
+        new StillImageFilterProcessor(
             // Use acquireNextImage since image reader is only for one image.
             reader.acquireNextImage(),
             captureFile,
+            this.backgroundHandler, //can use for saving the processed file
             new ImageSaver.Callback() {
               @Override
               public void onComplete(String absolutePath) {
@@ -1302,7 +1312,10 @@ public class Camera
               public void onError(String errorCode, String errorMessage) {
                 dartMessenger.error(flutterResult, errorCode, errorMessage, null);
               }
-            }));
+            },
+            filterPipelineController
+        ));
+
     cameraCaptureCallback.setCameraState(CameraState.STATE_PREVIEW);
   }
 

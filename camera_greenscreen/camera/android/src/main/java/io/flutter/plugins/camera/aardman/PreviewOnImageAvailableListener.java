@@ -9,13 +9,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.nio.ByteBuffer;
 
-public class ImageAvailableListener implements ImageReader.OnImageAvailableListener {
+public class PreviewOnImageAvailableListener implements ImageReader.OnImageAvailableListener {
 
     private static final String TAG = "ImageAvailableListener";
 
     PreviewFrameHandler output;
 
-        public ImageAvailableListener(PreviewFrameHandler previewFrameHandler){
+        public PreviewOnImageAvailableListener(PreviewFrameHandler previewFrameHandler){
             this.output = previewFrameHandler;
         }
 

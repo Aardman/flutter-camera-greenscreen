@@ -6,7 +6,9 @@ import android.media.ImageReader;
 import android.os.Build;
 import android.util.Size;
 import android.view.Surface;
+import android.graphics.Bitmap;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 /**
@@ -40,23 +42,27 @@ public class FilterPipelineController {
      * That stage could be the GPUImageFilters, or native as in Chornenko example
      *
      * */
-    GLWorker glWorker;
+    FilterRenderer filterRenderer;
 
     /** Current window dimensions */
     Size viewSize;
+
+    /** Still image parameters */
+    @Nullable Size stillImageSize;
+    @Nullable byte [] stillImageBytes;
+    @Nullable Runnable onStillImageAvailable;
 
     /*********************
      *  Initialisation   *
      *********************/
 
-    @RequiresApi(api = Build.VERSION_CODES.R)
     public FilterPipelineController(SurfaceTexture flutterTexture) {
 
         //The filter or filter group
         //eglBridge will start openGL session running
         //init filter on the glThread
-        FilterRenderer renderer = new FilterRenderer();
-        glWorker =  (GLWorker) renderer;
+        filterRenderer = new FilterRenderer();
+        GLWorker glWorker =  (GLWorker) filterRenderer;
         this.eglBridge = new GLBridge(flutterTexture, glWorker);
 
         //TODO:
@@ -69,7 +75,7 @@ public class FilterPipelineController {
      */
     public void setSize(Size previewSize) {
         this.viewSize = previewSize;
-        glWorker.setSize(previewSize);
+        ((GLWorker) filterRenderer).setSize(previewSize);
     }
 
     /**
@@ -84,20 +90,33 @@ public class FilterPipelineController {
                          viewSize.getWidth(),
                          viewSize.getHeight(),
                          //This old fashioned format is expected by GPUImage native library for RGB conversion YUV_420_888
+                         //and its the one used for a camera preview
                          ImageFormat.YUV_420_888,
                          2);
 
-         ImageAvailableListener imageAvailableListener = new ImageAvailableListener((PreviewFrameHandler) glWorker);
+         GLWorker glWorker =  (GLWorker) this.filterRenderer;
+
+         PreviewOnImageAvailableListener previewOnImageAvailableListener = new PreviewOnImageAvailableListener((PreviewFrameHandler) glWorker);
 
          /**
           *  Note this ImageReader takes a null handler ref as it will run on the calling thread
           *  which is the camera preview callback thread, so there is no need to set handler explicitly
           */
-         this.filterImageReader.setOnImageAvailableListener(imageAvailableListener, null);
+         this.filterImageReader.setOnImageAvailableListener(previewOnImageAvailableListener, null);
 
          return this.filterImageReader.getSurface();
     }
 
+    /**********************************
+     *      Still Image Handling      *
+     **********************************/
+     public void filterStillImage(Bitmap stillImageBitmap, Runnable stillImageCompletion){
+         filterRenderer.scheduleStillImageFiltering(stillImageBitmap, stillImageCompletion);
+     }
+
+    public Bitmap getLastFilteredResult(){
+         return filterRenderer.getStillImageBitmap();
+    }
 
     /*********************
      *      Updates      *

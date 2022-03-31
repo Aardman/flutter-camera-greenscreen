@@ -1,5 +1,6 @@
 package io.flutter.plugins.camera.aardman;
 
+import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLDebugHelper;
 import android.opengl.GLUtils;
@@ -16,6 +17,7 @@ import javax.microedition.khronos.opengles.GL;
 import javax.microedition.khronos.opengles.GL10;
 
 import jp.co.cyberagent.android.gpuimage.GLTextureView;
+import jp.co.cyberagent.android.gpuimage.GPUImageNativeLibrary;
 
 public class GLBridge implements Runnable {
     private static final String LOG_TAG = "EglBridge.GLWorker";
@@ -30,6 +32,16 @@ public class GLBridge implements Runnable {
     private boolean running;
 
     private  GLWorker worker;
+
+    //Handling the bitmaps
+    private EGLSurface eglPixelBufferSurface;
+    private Bitmap bitmap;
+    private int captureWidth;
+    private int captureHeight;
+    private int format; //GL format
+    private int pixelBufferSize;
+
+
 
     public GLBridge(SurfaceTexture flutterTexture,  GLWorker worker) {
         this.flutterTexture = flutterTexture;
@@ -57,19 +69,30 @@ public class GLBridge implements Runnable {
         eglContext = createContext(egl, eglDisplay, eglConfig);
 
         eglSurface = egl.eglCreateWindowSurface(eglDisplay, eglConfig, flutterTexture, null);
-
         if (eglSurface == null || eglSurface == EGL10.EGL_NO_SURFACE) {
             throw new RuntimeException("GL Error: " + GLUtils.getEGLErrorString(egl.eglGetError()));
         }
 
-        if (!egl.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
-            throw new RuntimeException("GL make current error: " + GLUtils.getEGLErrorString(egl.eglGetError()));
-        }
+        //This is purely for rendering out captures
+        eglPixelBufferSurface = egl.eglCreatePbufferSurface(eglDisplay, eglConfig,null);
+
+        makeFlutterOutputCurrent();
 
         /** Get GL for rendering */
         gl = (GL10) eglContext.getGL();
     }
 
+    private void makeFlutterOutputCurrent(){
+        if (!egl.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
+            throw new RuntimeException("GL make flutterOutputSurface current error: " + GLUtils.getEGLErrorString(egl.eglGetError()));
+        }
+    }
+
+    private void makeStillImagePixelBufferCurrent(){
+        if (!egl.eglMakeCurrent(eglDisplay, eglPixelBufferSurface, eglPixelBufferSurface, eglContext)) {
+            throw new RuntimeException("GL make eglPixelBufferSurface current error: " + GLUtils.getEGLErrorString(egl.eglGetError()));
+        }
+    }
 
     private void deinitGL() {
         egl.eglMakeCurrent(eglDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
@@ -86,14 +109,36 @@ public class GLBridge implements Runnable {
         worker.onCreate();
         Log.d(LOG_TAG, "OpenGL init OK.");
             while (running) {
-                 worker.onDrawFrame();
-                //Swap from current eglSurface to display surface
-                if (!egl.eglSwapBuffers(eglDisplay, eglSurface)) {
-                    Log.d(LOG_TAG, String.valueOf(egl.eglGetError()));
+                //if performing the filtering, render to the pixel buffer surface
+                if (worker.isFilteringStillImage()){
+                    makeStillImagePixelBufferCurrent();
+                    //Read pixels to buffer that can be used to pull bitmaps
+//                    gl.glReadPixels(0,0, captureWidth, captureHeight, format, pixelBufferSize, eglPixelBufferSurface);
+//                    createBitmapFromPixelBuffer();
+                    worker.filterStillImage(null); //will just read the current buffer data into the output bitmap
+                    makeFlutterOutputCurrent();
                 }
+                else {
+                    worker.onDrawFrame();
+                    //Swap from current eglSurface to display surface
+                    if (!egl.eglSwapBuffers(eglDisplay, eglSurface)) {
+                        Log.d(LOG_TAG, String.valueOf(egl.eglGetError()));
+                    }
+               }
             }
         worker.onDispose();
         deinitGL();
+    }
+
+    //This is copied from the GPUImage Pixelbuffer class, but it is unclear how this
+    //works.
+    //It could be that Bitmap.createBitmap, as a side effect, uses the current openGL surface
+    //as the source of the data that  is used. (ie: its initialised from the current surface data)
+    //rather than zeroed memory.
+    //If so, this is undocumented by
+    public void createBitmapFromPixelBuffer(SurfaceTexture eglPixelBufferSurface, int width, int height) {
+        bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        GPUImageNativeLibrary.adjustBitmap(bitmap);
     }
 
     private EGLContext createContext(EGL10 egl, EGLDisplay eglDisplay, EGLConfig eglConfig) {

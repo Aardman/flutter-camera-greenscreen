@@ -57,6 +57,7 @@ public class CameraPipelineLoader {
                 textureRegistry.createSurfaceTexture();
 
         SurfaceTexture surfaceTexture = surfaceTextureEntry.surfaceTexture();
+        //TODO: REmove hard coded size
         surfaceTexture.setDefaultBufferSize(720, 480);
 
         return surfaceTextureEntry;
