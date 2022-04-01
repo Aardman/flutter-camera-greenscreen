@@ -206,7 +206,16 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
      */
     void updateFilterParameters(FilterParameters parameters){
 
-        GPUImageChromaKeyBlendFilter filter = (GPUImageChromaKeyBlendFilter) glFilter;
+        //we need to find which filter needs updating
+        GPUImageChromaKeyBlendFilter filter = null;
+        if (altFilter instanceof GPUImageChromaKeyBlendFilter){
+           filter = (GPUImageChromaKeyBlendFilter) altFilter;
+        }
+        else if (glFilter instanceof GPUImageChromaKeyBlendFilter){
+           filter = (GPUImageChromaKeyBlendFilter) glFilter;
+        }
+        
+        if(filter == null) { return; }
 
         if( filterParameters.replacementColour != null ){
             float [] colour = parameters.getColorToReplace();
@@ -324,6 +333,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
         setupGLObjects();
         initAltFilter();
         createChromaKeyFilter();
+        toggleFilter();
     }
 
     //Called by GLBridge (GLThread)
