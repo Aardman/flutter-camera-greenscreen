@@ -131,6 +131,15 @@ public class FilterPipelineController {
         filterRenderer.updateFilterParameters(parameters);
     }
 
+    public void disableFilter(){
+        filterRenderer.disableFilter();
+    }
+
+    public void enableFilter(){
+        filterRenderer.enableFilter();
+    }
+
+
     /*********************
      *      Disposal     *
      *********************/

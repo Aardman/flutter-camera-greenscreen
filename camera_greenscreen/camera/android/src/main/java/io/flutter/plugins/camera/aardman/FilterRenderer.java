@@ -64,6 +64,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
      */
     private FilterParameters filterParameters;
     private GPUImageFilter glFilter;
+    private GPUImageFilter altFilter;
 
     /**
      * Display parameters
@@ -165,11 +166,44 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
         glFilter.onOutputSizeChanged(outputWidth, outputHeight);
     }
 
+    private void initAltFilter(){
+        altFilter = new GPUImageFilter();
+        altFilter.ifNeedInit();
+        altFilter.onOutputSizeChanged(outputWidth, outputHeight);
+    }
+
 
     /*********************************************************************************
-     *                             Filter Parameters
+     *                                Flutter API calls
      *********************************************************************************/
 
+    /**
+     *   Enable/disable filtering
+     */
+
+    public void enableFilter(){
+        if (glFilter != null && altFilter != null &&
+                !(glFilter instanceof GPUImageChromaKeyBlendFilter)) {
+            toggleFilter();
+        }
+    }
+
+    public void disableFilter(){
+        if (glFilter != null && altFilter != null &&
+                glFilter instanceof GPUImageChromaKeyBlendFilter ) {
+            toggleFilter();
+        }
+    }
+
+    public void toggleFilter(){
+        GPUImageFilter temp = glFilter;
+        setFilter(altFilter);
+        altFilter = temp;
+    }
+
+    /**
+     *   Filter Parameters
+     */
     void updateFilterParameters(FilterParameters parameters){
 
         GPUImageChromaKeyBlendFilter filter = (GPUImageChromaKeyBlendFilter) glFilter;
@@ -288,6 +322,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
     @RequiresApi(api = Build.VERSION_CODES.R)
     public void onCreate() {
         setupGLObjects();
+        initAltFilter();
         createChromaKeyFilter();
     }
 

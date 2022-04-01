@@ -1377,10 +1377,12 @@ public class Camera
   //Aardman-animator
   public void enableFilters() {
     System.out.println("🤖 enableFiltersPressed");
+    filterPipelineController.enableFilter();
   }
 
   public void disableFilters() {
     System.out.println("🤖 disableFiltersPressed");
+    filterPipelineController.disableFilter();
   }
 
  public void updateFilters(Object arguments) {
