@@ -173,16 +173,19 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
 
         GPUImageChromaKeyBlendFilter filter = (GPUImageChromaKeyBlendFilter) glFilter;
 
-        if(filterParameters.replacementColour != parameters.replacementColour){
-            float [] colour = filterParameters.getColorToReplace();
+        if( filterParameters.replacementColour != null ){
+            float [] colour = parameters.getColorToReplace();
             filter.setColorToReplace(colour[0], colour[1], colour[2]);
         }
 
-        if( filterParameters.backgroundImage != null &&
-            !filterParameters.backgroundImage.equals(parameters.backgroundImage)){
+        if( filterParameters.backgroundImage == null ||
+                (parameters.backgroundImage!= null &&
+                 !filterParameters.backgroundImage.equals(parameters.backgroundImage))){
             //update background image
             //Bitmap bitmap = getBitmap(parameters.backgroundImage);
-            //filter.setBitmap(bitmap);
+            Bitmap bitmap = createImage(outputWidth, outputHeight, Color.YELLOW);
+
+            filter.setBitmap(bitmap);
         }
 
         filterParameters = parameters;
@@ -388,7 +391,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
            Bitmap redBitmap = createImage(720, 480, Color.RED);
 //         File bitmapFile = new File(Environment.getExternalStorageDirectory() + "/" + "0000-0001/Documents/demo_720.jpg");
 //         Bitmap bitmap = BitmapFactory.decodeFile(bitmapFile.getAbsolutePath());
-           chromaFilter.setBitmap(redBitmap);
+           //chromaFilter.setBitmap(redBitmap);
            float [] colour = filterParameters.getColorToReplace();
            chromaFilter.setColorToReplace(colour[0], colour[1], colour[2]);
            setFilter(chromaFilter);

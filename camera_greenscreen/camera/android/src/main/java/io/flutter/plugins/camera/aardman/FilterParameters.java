@@ -46,10 +46,6 @@ public final class FilterParameters {
         }
      }
 
-     public void setBackgroundImage(String path){
-        backgroundImage = path;
-     }
-
 
 }
 
