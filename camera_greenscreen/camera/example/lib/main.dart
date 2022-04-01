@@ -636,7 +636,8 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
 
     var data = {
       "backgroundPath": fullyQualifiedPath,
-      "hueRange": [0.35, 0.65]
+      "hueRange": [0.35, 0.65],
+      "colour" : [0.0, 0.0, 255.0]
     };
 
     await cameraController.updateFilters(data);

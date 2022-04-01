@@ -1385,7 +1385,7 @@ public class Camera
 
  public void updateFilters(Object arguments) {
    HashMap map = (HashMap) arguments;
-   FilterParameters parameters = new FilterParameters();
+   FilterParameters parameters = new FilterParameters(map);
    this.filterPipelineController.updateParameters(parameters);
  }
 

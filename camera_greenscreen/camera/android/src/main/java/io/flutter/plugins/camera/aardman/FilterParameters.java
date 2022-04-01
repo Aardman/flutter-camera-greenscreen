@@ -19,18 +19,24 @@ public final class FilterParameters {
     float  []  replacementColour = {0.0f, 1.0f, 0.0f} ;
     String   backgroundImage = null;
 
-    public FilterParameters() {}
+    public FilterParameters(){}
 
-    public FilterParameters(ArrayList colours, String backgroundImage){
-        setReplacementColour(colours);
-        setBackgroundImage(backgroundImage);
+    public FilterParameters(HashMap arguments) {
+         ArrayList<Double> colourDoubles = (ArrayList<Double>) arguments.get("colour");
+         if(colourDoubles != null){
+             setReplacementColour(colourDoubles);
+         }
+         String backgroundImagePath = (String) arguments.get("background");
+         if(backgroundImagePath != null){
+             backgroundImage = backgroundImagePath;
+         }
     }
 
      public float[] getColorToReplace(){
          return replacementColour;
      }
 
-     public void setReplacementColour(ArrayList<Integer>  colours){
+     public void setReplacementColour(ArrayList<Double> colours){
         if (colours != null) {
             float [] newColours = new float[3];
             for (int i = 0; i < colours.size() && i <= 2; i++) {

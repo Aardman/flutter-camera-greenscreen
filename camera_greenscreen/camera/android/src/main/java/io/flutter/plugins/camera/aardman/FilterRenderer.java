@@ -178,7 +178,8 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
             filter.setColorToReplace(colour[0], colour[1], colour[2]);
         }
 
-        if(!filterParameters.backgroundImage.equals(parameters.backgroundImage)){
+        if( filterParameters.backgroundImage != null &&
+            !filterParameters.backgroundImage.equals(parameters.backgroundImage)){
             //update background image
             //Bitmap bitmap = getBitmap(parameters.backgroundImage);
             //filter.setBitmap(bitmap);
