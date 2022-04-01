@@ -1,6 +1,7 @@
 package io.flutter.plugins.camera.aardman;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -182,15 +183,39 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
                 (parameters.backgroundImage!= null &&
                  !filterParameters.backgroundImage.equals(parameters.backgroundImage))){
             //update background image
-            //Bitmap bitmap = getBitmap(parameters.backgroundImage);
-            Bitmap bitmap = createImage(outputWidth, outputHeight, Color.YELLOW);
-
+            Bitmap bitmap = getBitmapFromFullQualifiedPath(parameters.backgroundImage);
             filter.setBitmap(bitmap);
         }
 
         filterParameters = parameters;
     }
 
+    //TODO: Test with sample background image
+    Bitmap getBitmapFromFullQualifiedPath(String path){
+        Bitmap bitmap;
+        bitmap = BitmapFactory.decodeFile(path);
+        //Fallback if theres a problem with the background image itself
+        if(bitmap == null){
+            bitmap = createImage(outputWidth, outputHeight, Color.RED);
+        }
+        else {
+            bitmap = scaleAndSizeBitmap(bitmap);
+        }
+        return bitmap;
+    }
+
+    //TODO: Size it
+    Bitmap scaleAndSizeBitmap(Bitmap bitmap){
+        Bitmap sizedBitmap;
+        if (bitmap.getWidth() != outputWidth ||
+           bitmap.getHeight() != outputHeight ){
+            sizedBitmap = createImage(outputWidth, outputHeight, Color.YELLOW);
+        }
+        else {
+            sizedBitmap = bitmap;
+        }
+        return sizedBitmap;
+    }
 
     /*********************************************************************************
      *
