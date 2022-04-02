@@ -15,6 +15,7 @@ import androidx.annotation.Nullable;
 import java.util.HashMap;
 
 import jp.co.cyberagent.android.gpuimage.GPUImage;
+import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageGrayscaleFilter;
 
 /**
@@ -62,8 +63,10 @@ public class FilterPipelineController {
     /**
      * For handling still image capture
      */
+    FilterParameters parameters;
     Context context = null;
     Bitmap currentBitmap = null;
+    Boolean filtersEnabled = false;
 
     /*********************
      *  Initialisation   *
@@ -89,14 +92,14 @@ public class FilterPipelineController {
         ((GLWorker) filterRenderer).setSize(previewSize);
     }
 
-    /**
-     * Must be set before still capture commences
-     *
-     * @param captureSize
-     */
-    public void setStillCaptureSize(Size captureSize) {
-       this.eglBridge.setupStillCapture(captureSize);
-    }
+//    /**
+//     * Must be set before still capture commences
+//     *
+//     * @param captureSize
+//     */
+//    public void setStillCaptureSize(Size captureSize) {
+//       this.eglBridge.setupStillCapture(captureSize);
+//    }
 
     /**
      *  Used by the Camera controller to setup the CaptureSession
@@ -131,14 +134,26 @@ public class FilterPipelineController {
      *      Still Image Handling      *
      **********************************/
      public void filterStillImage(Bitmap stillImageBitmap, Runnable stillImageCompletion){
-         if(this.context == null){
-             Log.e(TAG, "No Application Context available for GPUImage rendering");
-         }
-         GPUImage gpuImage = new GPUImage(this.context);
-         gpuImage.setFilter(chromaFilter);
-         this.currentBitmap = gpuImage.getBitmapWithFilterApplied(stillImageBitmap);
-         //gpuImage.saveToPictures("GPUImage", "ImageWithFilter.jpg", null);
+         updateCurrentBitmap(stillImageBitmap);
          stillImageCompletion.run();
+     }
+
+     void updateCurrentBitmap(Bitmap stillImageBitmap) {
+         if(!filtersEnabled){
+             this.currentBitmap = stillImageBitmap;
+         }
+         else {
+             if (this.context == null) {
+                 Log.e(TAG, "No Application Context available for GPUImage rendering");
+             }
+             GPUImage gpuImage = new GPUImage(this.context);
+             gpuImage.setFilter(getCustomFilter());
+             this.currentBitmap = gpuImage.getBitmapWithFilterApplied(stillImageBitmap);
+         }
+     }
+
+     GPUImageFilter getCustomFilter(){
+        return new GPUImageGrayscaleFilter();
      }
 
     public Bitmap getLastFilteredResult(){
@@ -154,10 +169,12 @@ public class FilterPipelineController {
     }
 
     public void disableFilter(){
+        this.filtersEnabled = false;
         filterRenderer.disableFilter();
     }
 
     public void enableFilter(){
+        this.filtersEnabled = true;
         filterRenderer.enableFilter();
     }
                             

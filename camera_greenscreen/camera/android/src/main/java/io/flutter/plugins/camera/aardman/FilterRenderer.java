@@ -10,15 +10,12 @@ import android.os.Build;
 import android.util.Log;
 import android.util.Size;
 
-import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -260,6 +257,10 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
         return sizedBitmap;
     }
 
+    public GPUImageFilter getFilter() {
+        return glFilter;
+    }
+
     /*********************************************************************************
      *
      *                        Preview Filtered Rendering
@@ -332,7 +333,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
     public void onCreate() {
         setupGLObjects();
         initAltFilter();
-        createChromaKeyFilter();
+        setFilter(getCustomFilter());
         toggleFilter();
     }
 
@@ -456,7 +457,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
 
       //Create a new instance of the class
     @RequiresApi(api = Build.VERSION_CODES.R)
-    void createChromaKeyFilter() {
+    GPUImageFilter getCustomFilter() {
            GPUImageChromaKeyBlendFilter chromaFilter =   new GPUImageChromaKeyBlendFilter();
            Bitmap redBitmap = createImage(720, 480, Color.RED);
 //         File bitmapFile = new File(Environment.getExternalStorageDirectory() + "/" + "0000-0001/Documents/demo_720.jpg");
@@ -464,7 +465,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
            //chromaFilter.setBitmap(redBitmap);
            float [] colour = filterParameters.getColorToReplace();
            chromaFilter.setColorToReplace(colour[0], colour[1], colour[2]);
-           setFilter(chromaFilter);
+           return  chromaFilter;
       }
 
     /**
@@ -580,5 +581,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
         public boolean isFlippedVertically() {
             return flipVertical;
         }
+
 
 }
