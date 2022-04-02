@@ -2,7 +2,10 @@ package io.flutter.plugins.camera.aardman;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ImageFormat;
+import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
 import android.media.ImageReader;
 import android.util.Log;
@@ -15,6 +18,7 @@ import androidx.annotation.Nullable;
 import java.util.HashMap;
 
 import jp.co.cyberagent.android.gpuimage.GPUImage;
+import jp.co.cyberagent.android.gpuimage.filter.GPUImageChromaKeyBlendFilter;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageGrayscaleFilter;
 
@@ -63,7 +67,7 @@ public class FilterPipelineController {
     /**
      * For handling still image capture
      */
-    FilterParameters parameters;
+    FilterParameters currentFilterParameters = new FilterParameters();
     Context context = null;
     Bitmap currentBitmap = null;
     Boolean filtersEnabled = false;
@@ -147,26 +151,56 @@ public class FilterPipelineController {
                  Log.e(TAG, "No Application Context available for GPUImage rendering");
              }
              GPUImage gpuImage = new GPUImage(this.context);
-             gpuImage.setFilter(getCustomFilter());
+             gpuImage.setFilter(getCustomFilter(stillImageBitmap));
              this.currentBitmap = gpuImage.getBitmapWithFilterApplied(stillImageBitmap);
          }
-     }
-
-     GPUImageFilter getCustomFilter(){
-        return new GPUImageGrayscaleFilter();
      }
 
     public Bitmap getLastFilteredResult(){
          return this.currentBitmap;
     }
 
+    /**
+     * Filter
+     */
+
+//    GPUImageFilter getCustomFilter(){
+//        return new GPUImageGrayscaleFilter();
+//    }
+
+    GPUImageFilter getCustomFilter(Bitmap bitmap) {
+        GPUImageChromaKeyBlendFilter chromaFilter =   new GPUImageChromaKeyBlendFilter();
+        Bitmap redBitmap = createImage(bitmap.getWidth(), bitmap.getHeight(), Color.RED);
+//         File bitmapFile = new File(Environment.getExternalStorageDirectory() + "/" + "0000-0001/Documents/demo_720.jpg");
+//         Bitmap bitmap = BitmapFactory.decodeFile(bitmapFile.getAbsolutePath());
+        //chromaFilter.setBitmap(redBitmap);
+        float [] colour = currentFilterParameters.getColorToReplace();
+        chromaFilter.setColorToReplace(colour[0], colour[1], colour[2]);
+        return  chromaFilter;
+    }
+
+    /**
+     * Generates a solid colour
+     * @param width
+     * @param height
+     * @param color
+     * @return A one color image with the given width and height.
+     */
+    public static Bitmap createImage(int width, int height, int color) {
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        Paint paint = new Paint();
+        paint.setColor(color);
+        canvas.drawRect(0F, 0F, (float) width, (float) height, paint);
+        return bitmap;
+    }
+
+
+
+
     /*********************
      *      Updates      *
      *********************/
-
-    public void updateParameters(FilterParameters parameters){
-        filterRenderer.updateFilterParameters(parameters);
-    }
 
     public void disableFilter(){
         this.filtersEnabled = false;
@@ -177,7 +211,11 @@ public class FilterPipelineController {
         this.filtersEnabled = true;
         filterRenderer.enableFilter();
     }
-                            
+
+    public void updateParameters(FilterParameters parameters){
+        filterRenderer.updateParameters(parameters);
+        this.currentFilterParameters = filterRenderer.getFilterParameters();
+    }
                             
     /********************   
      *     Disposal     *   

@@ -198,20 +198,17 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
         altFilter = temp;
     }
 
-    /**
-     *   Filter Parameters
-     */
-    void updateFilterParameters(FilterParameters parameters){
+    public void updateParameters(FilterParameters parameters){
 
         //we need to find which filter needs updating
         GPUImageChromaKeyBlendFilter filter = null;
         if (altFilter instanceof GPUImageChromaKeyBlendFilter){
-           filter = (GPUImageChromaKeyBlendFilter) altFilter;
+            filter = (GPUImageChromaKeyBlendFilter) altFilter;
         }
         else if (glFilter instanceof GPUImageChromaKeyBlendFilter){
-           filter = (GPUImageChromaKeyBlendFilter) glFilter;
+            filter = (GPUImageChromaKeyBlendFilter) glFilter;
         }
-        
+
         if(filter == null) { return; }
 
         if( filterParameters.replacementColour != null ){
@@ -221,13 +218,17 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
 
         if( filterParameters.backgroundImage == null ||
                 (parameters.backgroundImage!= null &&
-                 !filterParameters.backgroundImage.equals(parameters.backgroundImage))){
+                        !filterParameters.backgroundImage.equals(parameters.backgroundImage))){
             //update background image
             Bitmap bitmap = getBitmapFromFullQualifiedPath(parameters.backgroundImage);
             filter.setBitmap(bitmap);
         }
 
         filterParameters = parameters;
+    }
+
+    public FilterParameters getFilterParameters() {
+        return this.filterParameters;
     }
 
     //TODO: Test with sample background image
@@ -456,7 +457,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
       //Get a sample bitmap for the background  (Jurassic)
 
       //Create a new instance of the class
-    @RequiresApi(api = Build.VERSION_CODES.R)
     GPUImageFilter getCustomFilter() {
            GPUImageChromaKeyBlendFilter chromaFilter =   new GPUImageChromaKeyBlendFilter();
            Bitmap redBitmap = createImage(720, 480, Color.RED);
