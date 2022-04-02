@@ -1,8 +1,11 @@
 package io.flutter.plugins.camera.aardman;
 
+import android.app.Activity;
+import android.content.Context;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.media.ImageReader;
+import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 import android.graphics.Bitmap;
@@ -10,6 +13,9 @@ import android.graphics.Bitmap;
 import androidx.annotation.Nullable;
 
 import java.util.HashMap;
+
+import jp.co.cyberagent.android.gpuimage.GPUImage;
+import jp.co.cyberagent.android.gpuimage.filter.GPUImageGrayscaleFilter;
 
 /**
  * Acts as the controller of the capture flow
@@ -26,6 +32,8 @@ import java.util.HashMap;
  *
  */
 public class FilterPipelineController {
+
+     private static final String TAG = "FilterPipeController";
 
     /**
      * The camera captures to a surface managed by this imageReader
@@ -51,14 +59,21 @@ public class FilterPipelineController {
      */
     Size viewSize;
 
+    /**
+     * For handling still image capture
+     */
+    Context context = null;
+    Bitmap currentBitmap = null;
+
     /*********************
      *  Initialisation   *
      *********************/
 
-    public FilterPipelineController(SurfaceTexture flutterTexture) {
+    public FilterPipelineController(SurfaceTexture flutterTexture, Activity activity) {
         //The filter or filter group
         //eglBridge will start openGL session running
         //init filter on the glThread
+        this.context = activity.getApplicationContext();
         filterRenderer = new FilterRenderer();
         GLWorker glWorker = (GLWorker) filterRenderer;
         this.eglBridge = new GLBridge(flutterTexture, glWorker);
@@ -116,11 +131,18 @@ public class FilterPipelineController {
      *      Still Image Handling      *
      **********************************/
      public void filterStillImage(Bitmap stillImageBitmap, Runnable stillImageCompletion){
-         filterRenderer.onCaptureFrame(stillImageBitmap, stillImageCompletion);
+         if(this.context == null){
+             Log.e(TAG, "No Application Context available for GPUImage rendering");
+         }
+         GPUImage gpuImage = new GPUImage(this.context);
+         gpuImage.setFilter(chromaFilter);
+         this.currentBitmap = gpuImage.getBitmapWithFilterApplied(stillImageBitmap);
+         //gpuImage.saveToPictures("GPUImage", "ImageWithFilter.jpg", null);
+         stillImageCompletion.run();
      }
 
     public Bitmap getLastFilteredResult(){
-         return filterRenderer.getFilteredCaptureFrame();
+         return this.currentBitmap;
     }
 
     /*********************
@@ -138,11 +160,11 @@ public class FilterPipelineController {
     public void enableFilter(){
         filterRenderer.enableFilter();
     }
-
-
-    /*********************
-     *      Disposal     *
-     *********************/
-
+                            
+                            
+    /********************   
+     *     Disposal     *   
+     ********************/  
+                            
 
 }

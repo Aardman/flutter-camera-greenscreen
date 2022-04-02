@@ -192,7 +192,7 @@ public class Camera
     captureProps = new CameraCaptureProperties();
     cameraCaptureCallback = CameraCaptureCallback.create(this, captureTimeouts, captureProps);
 
-    filterPipelineController = new FilterPipelineController(flutterTexture.surfaceTexture());
+    filterPipelineController = new FilterPipelineController(flutterTexture.surfaceTexture(), activity);
 
     startBackgroundThread();
   }
