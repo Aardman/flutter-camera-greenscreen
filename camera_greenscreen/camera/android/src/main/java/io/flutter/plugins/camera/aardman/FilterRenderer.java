@@ -59,7 +59,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
     /**
      * Dependencies
      */
-    private FilterParameters filterParameters;
     private GPUImageFilter glFilter;
     private GPUImageFilter altFilter;
 
@@ -125,7 +124,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
      * from the main openGL render loop
      */
     private Queue<Runnable> openGLTaskQueue;
-    private Queue<Runnable> openGLStillImageTaskQueue;
 
     /*********************************************************************************
      *
@@ -135,8 +133,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
 
     public FilterRenderer( ) {
         openGLTaskQueue = new LinkedList<>();
-        openGLStillImageTaskQueue = new LinkedList<>();
-        filterParameters = new FilterParameters();
     }
 
     private void setupGLObjects(){
@@ -211,25 +207,21 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
 
         if(filter == null) { return; }
 
-        if( filterParameters.replacementColour != null ){
+        if( parameters.replacementColour != null ){
             float [] colour = parameters.getColorToReplace();
             filter.setColorToReplace(colour[0], colour[1], colour[2]);
         }
 
-        if( filterParameters.backgroundImage == null ||
+        if( parameters.backgroundImage == null ||
                 (parameters.backgroundImage!= null &&
-                        !filterParameters.backgroundImage.equals(parameters.backgroundImage))){
+                        !parameters.backgroundImage.equals(parameters.backgroundImage))){
             //update background image
             Bitmap bitmap = getBitmapFromFullQualifiedPath(parameters.backgroundImage);
             filter.setBitmap(bitmap);
         }
 
-        filterParameters = parameters;
     }
 
-    public FilterParameters getFilterParameters() {
-        return this.filterParameters;
-    }
 
     //TODO: Test with sample background image
     Bitmap getBitmapFromFullQualifiedPath(String path){
@@ -462,8 +454,8 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
            Bitmap redBitmap = createImage(720, 480, Color.RED);
 //         File bitmapFile = new File(Environment.getExternalStorageDirectory() + "/" + "0000-0001/Documents/demo_720.jpg");
 //         Bitmap bitmap = BitmapFactory.decodeFile(bitmapFile.getAbsolutePath());
-           //chromaFilter.setBitmap(redBitmap);
-           float [] colour = filterParameters.getColorToReplace();
+           chromaFilter.setBitmap(redBitmap);
+           float [] colour = {0.0f, 1.0f, 0.0f};
            chromaFilter.setColorToReplace(colour[0], colour[1], colour[2]);
            return  chromaFilter;
       }

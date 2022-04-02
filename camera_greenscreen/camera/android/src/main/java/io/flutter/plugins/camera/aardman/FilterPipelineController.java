@@ -96,14 +96,6 @@ public class FilterPipelineController {
         ((GLWorker) filterRenderer).setSize(previewSize);
     }
 
-//    /**
-//     * Must be set before still capture commences
-//     *
-//     * @param captureSize
-//     */
-//    public void setStillCaptureSize(Size captureSize) {
-//       this.eglBridge.setupStillCapture(captureSize);
-//    }
 
     /**
      *  Used by the Camera controller to setup the CaptureSession
@@ -164,19 +156,15 @@ public class FilterPipelineController {
      * Filter
      */
 
-//    GPUImageFilter getCustomFilter(){
-//        return new GPUImageGrayscaleFilter();
-//    }
-
     GPUImageFilter getCustomFilter(Bitmap bitmap) {
-        GPUImageChromaKeyBlendFilter chromaFilter =   new GPUImageChromaKeyBlendFilter();
+        GPUImageChromaKeyBlendFilter chromaFilter = new GPUImageChromaKeyBlendFilter();
         Bitmap redBitmap = createImage(bitmap.getWidth(), bitmap.getHeight(), Color.RED);
 //         File bitmapFile = new File(Environment.getExternalStorageDirectory() + "/" + "0000-0001/Documents/demo_720.jpg");
 //         Bitmap bitmap = BitmapFactory.decodeFile(bitmapFile.getAbsolutePath());
-        //chromaFilter.setBitmap(redBitmap);
+        chromaFilter.setBitmap(redBitmap);
         float [] colour = currentFilterParameters.getColorToReplace();
         chromaFilter.setColorToReplace(colour[0], colour[1], colour[2]);
-        return  chromaFilter;
+        return chromaFilter;
     }
 
     /**
@@ -196,8 +184,6 @@ public class FilterPipelineController {
     }
 
 
-
-
     /*********************
      *      Updates      *
      *********************/
@@ -213,8 +199,8 @@ public class FilterPipelineController {
     }
 
     public void updateParameters(FilterParameters parameters){
+        this.currentFilterParameters = parameters;
         filterRenderer.updateParameters(parameters);
-        this.currentFilterParameters = filterRenderer.getFilterParameters();
     }
                             
     /********************   
