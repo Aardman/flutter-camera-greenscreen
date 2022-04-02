@@ -46,6 +46,9 @@ public class BitmapSaver implements Runnable {
 
     @Override
     public void run() {
+        if (bitmap == null){
+            return;
+        }
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
