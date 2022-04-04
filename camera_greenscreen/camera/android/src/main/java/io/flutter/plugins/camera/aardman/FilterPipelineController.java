@@ -2,9 +2,11 @@ package io.flutter.plugins.camera.aardman;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
 import android.media.ImageReader;
@@ -82,6 +84,7 @@ public class FilterPipelineController {
         //init filter on the glThread
         this.context = activity.getApplicationContext();
         filterRenderer = new FilterRenderer();
+        filterRenderer.previewFilterParameters = currentFilterParameters;
         GLWorker glWorker = (GLWorker) filterRenderer;
         this.eglBridge = new GLBridge(flutterTexture, glWorker);
     }
@@ -143,7 +146,10 @@ public class FilterPipelineController {
                  Log.e(TAG, "No Application Context available for GPUImage rendering");
              }
              GPUImage gpuImage = new GPUImage(this.context);
-             gpuImage.setFilter(getCustomFilter(stillImageBitmap));
+             Size outputSize = new Size(stillImageBitmap.getWidth(), stillImageBitmap.getHeight());
+             GPUImageChromaKeyBlendFilter filter = CustomFilterFactory.getCustomFilter(this.currentFilterParameters);
+             CustomFilterFactory.setChromaBackground(filter, outputSize, currentFilterParameters);
+             gpuImage.setFilter(filter);
              this.currentBitmap = gpuImage.getBitmapWithFilterApplied(stillImageBitmap);
          }
      }
@@ -152,36 +158,6 @@ public class FilterPipelineController {
          return this.currentBitmap;
     }
 
-    /**
-     * Filter
-     */
-
-    GPUImageFilter getCustomFilter(Bitmap bitmap) {
-        GPUImageChromaKeyBlendFilter chromaFilter = new GPUImageChromaKeyBlendFilter();
-        Bitmap redBitmap = createImage(bitmap.getWidth(), bitmap.getHeight(), Color.RED);
-//         File bitmapFile = new File(Environment.getExternalStorageDirectory() + "/" + "0000-0001/Documents/demo_720.jpg");
-//         Bitmap bitmap = BitmapFactory.decodeFile(bitmapFile.getAbsolutePath());
-        chromaFilter.setBitmap(redBitmap);
-        float [] colour = currentFilterParameters.getColorToReplace();
-        chromaFilter.setColorToReplace(colour[0], colour[1], colour[2]);
-        return chromaFilter;
-    }
-
-    /**
-     * Generates a solid colour
-     * @param width
-     * @param height
-     * @param color
-     * @return A one color image with the given width and height.
-     */
-    public static Bitmap createImage(int width, int height, int color) {
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        Paint paint = new Paint();
-        paint.setColor(color);
-        canvas.drawRect(0F, 0F, (float) width, (float) height, paint);
-        return bitmap;
-    }
 
 
     /*********************

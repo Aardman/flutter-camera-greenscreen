@@ -113,6 +113,11 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
 
 
     /**
+     * Filter parameters
+     */
+    FilterParameters previewFilterParameters;
+
+    /**
      *   Used to provide separate (unshared) objects for capture
      *   part of the rendering pipeline
      */
@@ -220,6 +225,8 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
             filter.setBitmap(bitmap);
         }
 
+        this.previewFilterParameters = parameters;
+
     }
 
 
@@ -326,7 +333,9 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
     public void onCreate() {
         setupGLObjects();
         initAltFilter();
-        setFilter(getCustomFilter());
+        //initialisation of main filter onCreate
+        GPUImageFilter filter = CustomFilterFactory.getCustomFilter(this.previewFilterParameters);
+        setFilter(filter);
         toggleFilter();
     }
 
@@ -448,17 +457,17 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
 
       //Get a sample bitmap for the background  (Jurassic)
 
-      //Create a new instance of the class
-    GPUImageFilter getCustomFilter() {
-           GPUImageChromaKeyBlendFilter chromaFilter =   new GPUImageChromaKeyBlendFilter();
-           Bitmap redBitmap = createImage(720, 480, Color.RED);
-//         File bitmapFile = new File(Environment.getExternalStorageDirectory() + "/" + "0000-0001/Documents/demo_720.jpg");
-//         Bitmap bitmap = BitmapFactory.decodeFile(bitmapFile.getAbsolutePath());
-           chromaFilter.setBitmap(redBitmap);
-           float [] colour = {0.0f, 1.0f, 0.0f};
-           chromaFilter.setColorToReplace(colour[0], colour[1], colour[2]);
-           return  chromaFilter;
-      }
+//      //Create a new instance of the class
+//    GPUImageFilter getCustomFilter() {
+//           GPUImageChromaKeyBlendFilter chromaFilter =   new GPUImageChromaKeyBlendFilter();
+//           Bitmap redBitmap = createImage(720, 480, Color.RED);
+////         File bitmapFile = new File(Environment.getExternalStorageDirectory() + "/" + "0000-0001/Documents/demo_720.jpg");
+////         Bitmap bitmap = BitmapFactory.decodeFile(bitmapFile.getAbsolutePath());
+//           chromaFilter.setBitmap(redBitmap);
+//           float [] colour = {0.0f, 1.0f, 0.0f};
+//           chromaFilter.setColorToReplace(colour[0], colour[1], colour[2]);
+//           return  chromaFilter;
+//      }
 
     /**
      * Generates a solid colour
