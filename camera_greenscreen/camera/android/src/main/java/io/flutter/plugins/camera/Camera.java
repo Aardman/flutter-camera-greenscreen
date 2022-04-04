@@ -192,7 +192,7 @@ public class Camera
     captureProps = new CameraCaptureProperties();
     cameraCaptureCallback = CameraCaptureCallback.create(this, captureTimeouts, captureProps);
 
-    filterPipelineController = new FilterPipelineController(flutterTexture.surfaceTexture());
+    filterPipelineController = new FilterPipelineController(flutterTexture.surfaceTexture(), activity);
 
     startBackgroundThread();
   }
@@ -275,7 +275,7 @@ public class Camera
 
     //Capture size for openGL should match this size if using the
     //pictureImageReader as a source of the still captures
-    filterPipelineController.setStillCaptureSize(captureSize);
+    //filterPipelineController.setStillCaptureSize(captureSize);
 
     // For image streaming, use the provided image format or fall back to YUV420.
     Integer imageFormat = supportedImageFormats.get(imageFormatGroup);

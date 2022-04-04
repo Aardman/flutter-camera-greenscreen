@@ -1,8 +1,14 @@
 package io.flutter.plugins.camera.aardman;
 
+import android.app.Activity;
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ImageFormat;
+import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
 import android.media.ImageReader;
+import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 import android.graphics.Bitmap;
@@ -10,6 +16,11 @@ import android.graphics.Bitmap;
 import androidx.annotation.Nullable;
 
 import java.util.HashMap;
+
+import jp.co.cyberagent.android.gpuimage.GPUImage;
+import jp.co.cyberagent.android.gpuimage.filter.GPUImageChromaKeyBlendFilter;
+import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
+import jp.co.cyberagent.android.gpuimage.filter.GPUImageGrayscaleFilter;
 
 /**
  * Acts as the controller of the capture flow
@@ -26,6 +37,8 @@ import java.util.HashMap;
  *
  */
 public class FilterPipelineController {
+
+     private static final String TAG = "FilterPipeController";
 
     /**
      * The camera captures to a surface managed by this imageReader
@@ -51,14 +64,23 @@ public class FilterPipelineController {
      */
     Size viewSize;
 
+    /**
+     * For handling still image capture
+     */
+    FilterParameters currentFilterParameters = new FilterParameters();
+    Context context = null;
+    Bitmap currentBitmap = null;
+    Boolean filtersEnabled = false;
+
     /*********************
      *  Initialisation   *
      *********************/
 
-    public FilterPipelineController(SurfaceTexture flutterTexture) {
+    public FilterPipelineController(SurfaceTexture flutterTexture, Activity activity) {
         //The filter or filter group
         //eglBridge will start openGL session running
         //init filter on the glThread
+        this.context = activity.getApplicationContext();
         filterRenderer = new FilterRenderer();
         GLWorker glWorker = (GLWorker) filterRenderer;
         this.eglBridge = new GLBridge(flutterTexture, glWorker);
@@ -74,14 +96,6 @@ public class FilterPipelineController {
         ((GLWorker) filterRenderer).setSize(previewSize);
     }
 
-    /**
-     * Must be set before still capture commences
-     *
-     * @param captureSize
-     */
-    public void setStillCaptureSize(Size captureSize) {
-       this.eglBridge.setupStillCapture(captureSize);
-    }
 
     /**
      *  Used by the Camera controller to setup the CaptureSession
@@ -116,33 +130,82 @@ public class FilterPipelineController {
      *      Still Image Handling      *
      **********************************/
      public void filterStillImage(Bitmap stillImageBitmap, Runnable stillImageCompletion){
-         filterRenderer.onCaptureFrame(stillImageBitmap, stillImageCompletion);
+         updateCurrentBitmap(stillImageBitmap);
+         stillImageCompletion.run();
+     }
+
+     void updateCurrentBitmap(Bitmap stillImageBitmap) {
+         if(!filtersEnabled){
+             this.currentBitmap = stillImageBitmap;
+         }
+         else {
+             if (this.context == null) {
+                 Log.e(TAG, "No Application Context available for GPUImage rendering");
+             }
+             GPUImage gpuImage = new GPUImage(this.context);
+             gpuImage.setFilter(getCustomFilter(stillImageBitmap));
+             this.currentBitmap = gpuImage.getBitmapWithFilterApplied(stillImageBitmap);
+         }
      }
 
     public Bitmap getLastFilteredResult(){
-         return filterRenderer.getFilteredCaptureFrame();
+         return this.currentBitmap;
     }
+
+    /**
+     * Filter
+     */
+
+    GPUImageFilter getCustomFilter(Bitmap bitmap) {
+        GPUImageChromaKeyBlendFilter chromaFilter = new GPUImageChromaKeyBlendFilter();
+        Bitmap redBitmap = createImage(bitmap.getWidth(), bitmap.getHeight(), Color.RED);
+//         File bitmapFile = new File(Environment.getExternalStorageDirectory() + "/" + "0000-0001/Documents/demo_720.jpg");
+//         Bitmap bitmap = BitmapFactory.decodeFile(bitmapFile.getAbsolutePath());
+        chromaFilter.setBitmap(redBitmap);
+        float [] colour = currentFilterParameters.getColorToReplace();
+        chromaFilter.setColorToReplace(colour[0], colour[1], colour[2]);
+        return chromaFilter;
+    }
+
+    /**
+     * Generates a solid colour
+     * @param width
+     * @param height
+     * @param color
+     * @return A one color image with the given width and height.
+     */
+    public static Bitmap createImage(int width, int height, int color) {
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        Paint paint = new Paint();
+        paint.setColor(color);
+        canvas.drawRect(0F, 0F, (float) width, (float) height, paint);
+        return bitmap;
+    }
+
 
     /*********************
      *      Updates      *
      *********************/
 
-    public void updateParameters(FilterParameters parameters){
-        filterRenderer.updateFilterParameters(parameters);
-    }
-
     public void disableFilter(){
+        this.filtersEnabled = false;
         filterRenderer.disableFilter();
     }
 
     public void enableFilter(){
+        this.filtersEnabled = true;
         filterRenderer.enableFilter();
     }
 
-
-    /*********************
-     *      Disposal     *
-     *********************/
-
+    public void updateParameters(FilterParameters parameters){
+        this.currentFilterParameters = parameters;
+        filterRenderer.updateParameters(parameters);
+    }
+                            
+    /********************   
+     *     Disposal     *   
+     ********************/  
+                            
 
 }
