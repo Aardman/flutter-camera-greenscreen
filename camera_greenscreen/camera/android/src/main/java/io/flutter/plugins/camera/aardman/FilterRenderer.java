@@ -220,9 +220,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
         if( parameters.backgroundImage == null ||
                 (parameters.backgroundImage!= null &&
                         !parameters.backgroundImage.equals(parameters.backgroundImage))){
-            //update background image
-            Bitmap bitmap = getBitmapFromFullQualifiedPath(parameters.backgroundImage);
-            filter.setBitmap(bitmap);
+            CustomFilterFactory.setChromaBackground(filter, new Size(outputWidth, outputHeight), parameters);
         }
 
         this.previewFilterParameters = parameters;
