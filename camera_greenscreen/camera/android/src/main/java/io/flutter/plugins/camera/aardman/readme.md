@@ -13,9 +13,6 @@ The Main thread sets up the processing and receives the final results
 The Camera thread processes images from the preview and prepares the input RGB texture used by openGL
 The GLThread runs the GPU operations when data is available from the Camera thread then swaps buffers to the main thread/display
 
-A separate pipeline is required to capture a still image and uses an additional handler to do this 
-on its own background thread.
-
 Refer to architecture diagram enclosed for an overview of how the objects in this package 
 relate to these processes.
   

@@ -202,10 +202,6 @@ public class FilterPipelineController {
         this.currentFilterParameters = parameters;
         filterRenderer.updateParameters(parameters);
     }
-                            
-    /********************   
-     *     Disposal     *   
-     ********************/  
-                            
+
 
 }
