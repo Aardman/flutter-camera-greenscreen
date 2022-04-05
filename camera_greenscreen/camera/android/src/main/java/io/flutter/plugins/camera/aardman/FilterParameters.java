@@ -26,7 +26,7 @@ public final class FilterParameters {
          if(colourDoubles != null){
              setReplacementColour(colourDoubles);
          }
-         String backgroundImagePath = (String) arguments.get("background");
+         String backgroundImagePath = (String) arguments.get("backgroundPath");
          if(backgroundImagePath != null){
              backgroundImage = backgroundImagePath;
          }

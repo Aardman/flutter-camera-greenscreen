@@ -74,30 +74,31 @@ public class CustomFilterFactory {
 
         int w = inputBitmap.getWidth();
         int h = inputBitmap.getHeight();
-        int outputHeight = targetSize.getHeight();
+
         int outputWidth  = targetSize.getWidth();
+        int outputHeight = targetSize.getHeight();
 
         //calculate scale from height
         //eg: 1000 / 800 = 1.39.
-        float scale_factor =  outputWidth / w;
+        float scale_factor = ( (float) h /  (float) outputHeight);
 
         //Calculate x translation
         //eg :  1600/1.39 -> 1152
         float scaledWidth = w / scale_factor;
         //eg :  1152 - 1600 ->  -224 (translate 200 left to recenter image)
-        float translationInX = (float) (scaledWidth - outputWidth)/2;
+        int translationInX =  (int) (scaledWidth - outputWidth) / 2;
 
         //add scale transformation
         Matrix matrix = new Matrix();
-        matrix.postScale(scale_factor, scale_factor);
-
-        //calculate translation in x direction
-        matrix.postTranslate(translationInX, 0.0f);
+        matrix.postScale(1/scale_factor, 1/scale_factor);
 
         //Create the output bitmap with the supplied transforms
-        Bitmap output = Bitmap.createBitmap(inputBitmap, 0, 0, outputWidth, outputHeight, matrix, true);
+        Bitmap scaled = Bitmap.createBitmap(inputBitmap, 0, 0, w, h, matrix, true);
 
-        return output;
+        //Now need to crop and translate
+        Bitmap cropped = Bitmap.createBitmap(scaled, translationInX, 0, outputWidth, outputHeight);
+
+        return cropped;
     }
 
 

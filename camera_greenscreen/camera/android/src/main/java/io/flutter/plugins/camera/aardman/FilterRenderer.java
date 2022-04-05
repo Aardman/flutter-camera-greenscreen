@@ -218,8 +218,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
         }
 
         if( parameters.backgroundImage == null ||
-                (parameters.backgroundImage!= null &&
-                        !parameters.backgroundImage.equals(parameters.backgroundImage))){
+                (parameters.backgroundImage!= null)){
             CustomFilterFactory.setChromaBackground(filter, new Size(outputWidth, outputHeight), parameters);
         }
 

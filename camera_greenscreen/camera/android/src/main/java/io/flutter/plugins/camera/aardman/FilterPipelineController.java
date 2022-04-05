@@ -158,8 +158,6 @@ public class FilterPipelineController {
          return this.currentBitmap;
     }
 
-
-
     /*********************
      *      Updates      *
      *********************/

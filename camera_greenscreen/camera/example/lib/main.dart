@@ -583,11 +583,12 @@ class _CameraExampleHomeState extends State<CameraExampleHome> with WidgetsBindi
     String? imagePath = "assets/backgrounds/testbg.jpg";
     File tempFileForChroma = await getImageFileFromAssets(imagePath);
     print("imagePath " + tempFileForChroma.toString());
+    String? fullPath = tempFileForChroma.path;
 
     var data = {
-      "backgroundPath": tempFileForChroma,
+      "backgroundPath": fullPath,
       "hueRange": [0.35, 0.65],
-      "colour": [0.0, 0.0, 255.0]
+      "colour": [0.0, 255.0, 0.0]
     };
 
     await cameraController.updateFilters(data);
