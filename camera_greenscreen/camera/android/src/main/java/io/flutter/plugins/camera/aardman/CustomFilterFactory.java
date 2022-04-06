@@ -48,7 +48,12 @@ public class CustomFilterFactory {
             //Use solid magenta background to indicate an error condition if loading the background file is unsuccesful
             backgroundBitmap = CustomFilterFactory.createImage(targetSize.getWidth(), targetSize.getHeight(), Color.MAGENTA);
         }
-        return CustomFilterFactory.prepareBitmap(backgroundBitmap, targetSize, isLandscape);
+        if(isLandscape){
+            return prepareBitmap(backgroundBitmap, targetSize);
+        }
+        else {
+            return preparePortaitBitmap(backgroundBitmap, targetSize);
+        }
     }
 
     /**
@@ -67,17 +72,12 @@ public class CustomFilterFactory {
      * Then the image is effectively cropped to the output size in a Bitmap.createBitmap
      * operation that uses the matrix combining identity x scale x translate operations
      *
-     * @param sourceBitmap The source bitmap/background image
+     * @param inputBitmap The source bitmap/background image
      * @param targetSize   The desired output size of the image
-     * @param isLandscape
      * @return a rotated, scaled and translated bitmap that is a center crop of the input
      */
 
-    public static Bitmap prepareBitmap(Bitmap inputBitmap, Size targetSize, boolean isLandscape) {
-
-        if(!isLandscape){
-            return preparePortaitBitmap(inputBitmap, targetSize);
-        }
+    public static Bitmap prepareBitmap(Bitmap inputBitmap, Size targetSize ) {
 
         Bitmap sourceBitmap = inputBitmap;
 
@@ -86,17 +86,10 @@ public class CustomFilterFactory {
 
         int outputWidth  = targetSize.getWidth();
         int outputHeight = targetSize.getHeight();
-
-        //landscape defaults
+ 
         //calculate scale from height
-        //eg: 1000 / 800 = 1.39.
         float scale_factor = ((float) h / (float) outputHeight);
-
-        //Calculate x translation
-        //eg :  1600/1.39 -> 1152
         float scaledWidth = w / scale_factor;
-        //eg :  1152 - 1600 ->  -224 (translate 200 left to recenter image)
-        int translationInX = (int) (scaledWidth - outputWidth) / 2;
 
         //add scale transformation
         Matrix matrix = new Matrix();
@@ -106,13 +99,14 @@ public class CustomFilterFactory {
         Bitmap scaled = Bitmap.createBitmap(inputBitmap, 0, 0, w, h, matrix, true);
 
         //Now need to crop and translate
+        int translationInX = (int) (scaledWidth - outputWidth) / 2;
         Bitmap outputBitmap = Bitmap.createBitmap(scaled, translationInX, 0, outputWidth, outputHeight);
 
-//       inputBitmap.recycle();
-//       sourceBitmap.recycle();
-//       scaled.recycle();
+        inputBitmap.recycle();
+        sourceBitmap.recycle();
+        scaled.recycle();
 
-       return outputBitmap;
+        return outputBitmap;
     }
 
     static Bitmap preparePortaitBitmap(Bitmap inputBitmap, Size targetSize) {
@@ -142,12 +136,11 @@ public class CustomFilterFactory {
 
         Bitmap rotated = rotateBitmap(cropped);
 
+        inputBitmap.recycle();
+        sourceBitmap.recycle();
+        scaled.recycle();
 
-    //       inputBitmap.recycle();
-    //       sourceBitmap.recycle();
-    //       scaled.recycle();
-
-         return rotated;
+        return rotated;
     }
 
     static Bitmap rotateBitmap(Bitmap sourceBitmap) {
