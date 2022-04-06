@@ -86,7 +86,7 @@ public class FilterPipelineController {
      */
     Rotation gpuImageRotation;
 
-    boolean isLandscape(){
+    public boolean isLandscape(){
         return (deviceOrientation == 0 || deviceOrientation == 180);
     }
 
@@ -134,7 +134,9 @@ public class FilterPipelineController {
         deviceOrientation = orientation;
         gpuImageRotation = Rotation.fromInt(orientation);
         if (filterRenderer != null){
-           // filterRenderer.setRotation(gpuImageRotation);
+            //does not have correct effect, rotates the entire preview unnecessarily
+            //probably the need is just to rotate the inpput bitmap to the filter itself
+           //filterRenderer.setRotation(gpuImageRotation);
         }
     }
 
