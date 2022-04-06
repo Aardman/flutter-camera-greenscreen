@@ -52,12 +52,12 @@ import jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil;
  * render pathways in the run loop corresponding with that.
  *
 */
-public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImageRendering  {
+public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
 
     private static final String TAG = "FilterRenderer";
 
     /**
-     * Dependencies
+     * Filters
      */
     private GPUImageFilter glFilter;
     private GPUImageFilter altFilter;
@@ -65,7 +65,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
     /**
      * Display parameters
      */
-    private int outputWidth ;
+    private int outputWidth;
     private int outputHeight;
     private int imageWidth;
     private int imageHeight;
@@ -98,31 +98,21 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
     //On each frame will be used to buffer from the preview data
     private IntBuffer glRgbPreviewBuffer;
 
-    /**
-     * Still capture rendering
-     * The calling process sets isProcessingStillImageFrame from the camera thread
-     * The render is scheduled and then activated by the EGLBridge
-     * Following the draw operation, the stillImageBitmapResult is non null
-     * The calling process retrieves the result and saves it to a file
-     */
-
-     private int glCaptureTextureId = NO_IMAGE;
-     private Boolean captureFrameReadyForFiltering = false;
-     private Bitmap stillImageBitmap;
-     private Runnable stillImageCompletion;
-     //texture rotation used to rotate bitmap when it is added to the
-     //choma filter
-     private boolean textureIsLandscape = true;
-
+    //texture rotation used to rotate bitmap when it is added to the
+    //chroma filter
+    private boolean textureIsLandscape = true;
 
     /**
      * Filter parameters
      */
     FilterParameters previewFilterParameters;
 
+    //Indicates that filter is not ready for use
+    //boolean filterIsBeingReplaced = false;
+
     /**
-     *   Used to provide separate (unshared) objects for capture
-     *   part of the rendering pipeline
+     * Used to provide separate (unshared) objects for capture
+     * part of the rendering pipeline
      */
     private FloatBuffer glCaptureTextureBuffer;
 
@@ -132,6 +122,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
      * from the main openGL render loop
      */
     private Queue<Runnable> openGLTaskQueue;
+    //private Queue<Runnable> controlQueue;
 
     /*********************************************************************************
      *
@@ -139,11 +130,54 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
      *
      *********************************************************************************/
 
-    public FilterRenderer( ) {
+    public FilterRenderer() {
         openGLTaskQueue = new LinkedList<>();
+        //controlQueue = new LinkedList<>();
     }
 
-    private void setupGLObjects(){
+    /**
+     *   Setup sequence regarding filters
+     *
+     *   On initialisation - setup the task queues
+     *
+     *   OnCreate - setup the GL resources and the identity filter
+     *
+     *   On enable   - if the identity filter is running and there is no chroma, leave as is
+     *
+     *   On disable  - if the chroma filter is running swap filters
+     *
+     *   On update filtering
+     *
+     *               - reset the current parameters
+     *
+     *               - if there is no chroma filter, create it with the current parameters
+     *                 set it as the relevant active/inactive filter
+     *
+     *               - if there is a chroma filter, recreate the filters
+     *
+     *   When recreating the filters
+     *               - switch rendering to the identity filter
+     *               - destroy and re-create the filter with the current parameters and store
+     *                 in the alt filter
+     *               - toggle on the chroma filter
+     *
+     *   Client sequences
+     *
+     *     - initialise the camera, creates the identity filter and starts the capture
+     *     - update filters
+     *     - enable/update/disable filters as desired.
+     *
+     */
+
+
+    //Setup GL environment
+    //Needs to be called from the GL thread
+    public void onCreate() {
+        setupGLObjects();
+        initialiseFilters();
+    }
+
+    private void setupGLObjects() {
 
         glFullScreenQuadBuffer = ByteBuffer.allocateDirect(QUAD.length * 4)
                 .order(ByteOrder.nativeOrder())
@@ -161,14 +195,14 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
         setRotation(Rotation.NORMAL, false, false);
     }
 
-    private void setFilter(GPUImageFilter filter){
-        glFilter = filter;
+    private void initialiseFilters() {
+        glFilter = new GPUImageFilter();
         glFilter.ifNeedInit();
         glFilter.onOutputSizeChanged(outputWidth, outputHeight);
     }
 
-    private void initAltFilter(){
-        altFilter = new GPUImageFilter();
+    private void setFilter(GPUImageChromaKeyBlendFilter filter) {
+        altFilter = filter;
         altFilter.ifNeedInit();
         altFilter.onOutputSizeChanged(outputWidth, outputHeight);
     }
@@ -180,86 +214,145 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
 
 
     /**
-     *   Enable/disable filtering
+     * Enable/disable filtering
      */
 
-    public void enableFilter(){
-        if (glFilter != null && altFilter != null &&
-                !(glFilter instanceof GPUImageChromaKeyBlendFilter)) {
+    public void enableFilter() {
+        if (glFilter != null && altFilter != null && !isChroma(glFilter)) {
             toggleFilter();
         }
     }
 
-    public void disableFilter(){
-        if (glFilter != null && altFilter != null &&
-                glFilter instanceof GPUImageChromaKeyBlendFilter ) {
+    public void disableFilter() {
+        if (glFilter != null && altFilter != null && isChroma(glFilter)) {
             toggleFilter();
         }
     }
 
-    public void toggleFilter(){
-        GPUImageFilter temp = glFilter;
-        setFilter(altFilter);
-        altFilter = temp;
-    }
+    /**
+     * Update parameters
+     */
 
-    public void setTextureIsLandscape(boolean isLandscape){
-        textureIsLandscape = isLandscape;
-    }
-
-    public void updateParameters(FilterParameters parameters){
+    public void updateParameters(final FilterParameters parameters) {
 
         //we need to find which filter needs updating
         GPUImageChromaKeyBlendFilter filter = null;
-        if (altFilter instanceof GPUImageChromaKeyBlendFilter){
+        if (isChroma(altFilter)) {
             filter = (GPUImageChromaKeyBlendFilter) altFilter;
-        }
-        else if (glFilter instanceof GPUImageChromaKeyBlendFilter){
+        } else if (isChroma(glFilter)) {
             filter = (GPUImageChromaKeyBlendFilter) glFilter;
         }
 
-        if(filter == null) { return; }
+        /**
+         * If there is no chroma filter, then its first time so we create one
+         * the parameters and a background file path
+         */
+        if (filter == null) {
+            appendToTaskQueue( ()->{
+                setupChromaFilter(parameters);
+            }, openGLTaskQueue);
+        }
+        else if (filter != null && parameters.backgroundImage != null){
+            appendToTaskQueue(()->{
+                restartChromaFilter(parameters);
+            }, openGLTaskQueue);
+        }
+        else if (filter != null && filter.getBitmap() == null) {
+            CustomFilterFactory.setChromaBackground(filter,
+                    new Size(outputWidth, outputHeight),
+                    parameters,
+                    textureIsLandscape);
+        }
 
-        if( parameters.replacementColour != null ){
-            float [] colour = parameters.getColorToReplace();
+        if (parameters.replacementColour != null) {
+            float[] colour = parameters.getColorToReplace();
             filter.setColorToReplace(colour[0], colour[1], colour[2]);
         }
 
-        if( parameters.backgroundImage == null ||
-                (parameters.backgroundImage!= null)){
-            CustomFilterFactory.setChromaBackground(filter, new Size(outputWidth, outputHeight), parameters, textureIsLandscape);
-        }
-
         this.previewFilterParameters = parameters;
+    }
+
+    /**
+     * Helper methods
+     */
+
+    /**
+     *    - record enablement state
+     *    - switch rendering to the identity filter
+     *    - destroy and re-create the filter with the current parameters and store
+     *      in the alt filter
+     *    - restore enablement state
+     *
+     * @param parameters
+     */
+    void restartChromaFilter(FilterParameters parameters){
+
+        if(isChroma(glFilter)){
+            disableFilter();
+        }
+
+        appendToTaskQueue(()->  {
+            rebuildChromaFilter(parameters);
+            }, openGLTaskQueue );
 
     }
 
 
-    //TODO: Test with sample background image
-    Bitmap getBitmapFromFullQualifiedPath(String path){
-        Bitmap bitmap;
-        bitmap = BitmapFactory.decodeFile(path);
-        //Fallback if theres a problem with the background image itself
-        if(bitmap == null){
-            bitmap = createImage(outputWidth, outputHeight, Color.RED);
+    //Replaces the chroma filter using the fresh parameters
+    void rebuildChromaFilter(FilterParameters parameters){
+        if(isChroma(glFilter)){
+            return;
         }
-        else {
-            bitmap = scaleAndSizeBitmap(bitmap);
+        else if(isChroma(altFilter)){
+            synchronized (altFilter){
+                GPUImageChromaKeyBlendFilter oldFilter = (GPUImageChromaKeyBlendFilter) altFilter;
+                oldFilter.destroy();
+                oldFilter.notify();
+            }
+            setupChromaFilter(parameters);
         }
-        return bitmap;
     }
 
-    //TODO: Size it
-    Bitmap scaleAndSizeBitmap(Bitmap bitmap){
-        Bitmap sizedBitmap;
-        if (bitmap.getWidth() != outputWidth ||
-           bitmap.getHeight() != outputHeight ){
-            sizedBitmap = createImage(outputWidth, outputHeight, Color.YELLOW);
+
+    void setupChromaFilter(FilterParameters parameters){
+        GPUImageChromaKeyBlendFilter filter = CustomFilterFactory.getCustomFilter(parameters);
+        if (parameters.backgroundImage != null) {
+            CustomFilterFactory.setChromaBackground(filter,
+                    new Size(outputWidth, outputHeight),
+                    parameters,
+                    textureIsLandscape);
         }
-        else {
-            sizedBitmap = bitmap;
+        setFilter(filter);
+    }
+
+    //In general should be set in the disabled 'slot' altFilter storage
+    void setNewChromaFilterInAppropriateState(GPUImageChromaKeyBlendFilter filter){
+        if(altFilter == null){
+            altFilter = filter;
         }
-        return sizedBitmap;
+    }
+
+    public void toggleFilter() {
+        GPUImageFilter temp = glFilter;
+        glFilter = altFilter;
+        altFilter = temp;
+    }
+
+    public void setIdentityFilterActive(){
+        if(glFilter!=null &&  !isChroma(glFilter)){
+            return;
+        }
+        else if(altFilter !=null && !isChroma(altFilter)){
+            glFilter = altFilter;
+        }
+    }
+
+    boolean isChroma(GPUImageFilter filter){
+        return filter instanceof GPUImageChromaKeyBlendFilter;
+    }
+
+    public void setTextureIsLandscape(boolean isLandscape) {
+        textureIsLandscape = isLandscape;
     }
 
     public GPUImageFilter getFilter() {
@@ -332,20 +425,10 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
         this.outputWidth  = size.getWidth();
     }
 
-    //Setup GL environment
-    //Needs to be called from the GLThread
-    @RequiresApi(api = Build.VERSION_CODES.R)
-    public void onCreate() {
-        setupGLObjects();
-        initAltFilter();
-        //initialisation of main filter onCreate
-        GPUImageFilter filter = CustomFilterFactory.getCustomFilter(this.previewFilterParameters);
-        setFilter(filter);
-        toggleFilter();
-    }
 
     //Called by GLBridge (GLThread)
     public void onDrawFrame() {
+
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
         //Copy RGB buffer to glTextureBuffer
@@ -354,141 +437,11 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
         //Perform the filter operation
         if (glFilter != null) {
             glFilter.onDraw(glTextureId, glFullScreenQuadBuffer, glTextureBuffer);
-        } 
-    }
-
-
-    /*********************************************************************************
-     *
-     *                              Capture Rendering
-     *
-     *********************************************************************************/
-
-    /**
-     * The renderer renders previews until a captureFrame has been added to the captureRGBBuffer
-     * @return
-     */
-    @Override
-    public Boolean rendererInPreviewMode() {
-        return !captureFrameReadyForFiltering;
-    }
-
-    //When filtering, swap rendering buffer and use a separate context
-    //for drawing, then swap back on the next trip through the render loop
-    public void onDrawCaptureFrame(){
-
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
-
-        //Perform the filter operation (GPUImage had to do this 2x, bug?)
-        if (glFilter != null) {
-            glFilter.onOutputSizeChanged(outputWidth, outputHeight);
-            glFilter.onDraw(glCaptureTextureId, glFullScreenQuadBuffer, glCaptureTextureBuffer);
         }
 
-        Log.i(TAG, "Completed still image render pass");
-    }
-
-    public void setResult(Bitmap bitmap){
-        stillImageBitmap = bitmap;
-        stillImageCompletion.run();
-        captureFrameReadyForFiltering = false;
     }
 
     public void onDispose() {}
-
-    /*********************************************************************************
-     *             Implementation of StillImageRendering Interface
-     *                public API to the FilterPipelineController
-     *********************************************************************************/
-
-    public void onCaptureFrame(Bitmap sourceBitmap, Runnable stillImageCompletion) {
-        //prepare the call to cause a still image renderpass to take place
-        this.stillImageCompletion = stillImageCompletion;
-        stillImageBitmap = sourceBitmap; //for debugging  only we can check the input
-
-        if (glRgbPreviewBuffer == null) {
-            glRgbPreviewBuffer = IntBuffer.allocate(sourceBitmap.getWidth() * sourceBitmap.getHeight());
-        }
-        synchronized (this) {
-            loadCaptureBitmapIntoTexture(sourceBitmap);
-            captureFrameReadyForFiltering = true;
-        }
-
-    }
-
-    public Bitmap getFilteredCaptureFrame(){
-        return stillImageBitmap;
-    }
-
-    /*********************************************************************************
-     *    Loading Still Bitmap for Capture Rendering - into glCaptureTextureId
-     *********************************************************************************/
-
-    public void loadCaptureBitmapIntoTexture(final Bitmap bitmap ) {
-        loadCaptureBitmapIntoTexture(bitmap, true);
-    }
-
-    public void loadCaptureBitmapIntoTexture(final Bitmap bitmap, final boolean recycle) {
-        if (bitmap == null) {
-            return;
-        }
-        Bitmap resizedBitmap = null;
-        if (bitmap.getWidth() % 2 == 1) {
-            resizedBitmap = Bitmap.createBitmap(bitmap.getWidth() + 1, bitmap.getHeight(),
-                    Bitmap.Config.ARGB_8888);
-            resizedBitmap.setDensity(bitmap.getDensity());
-            Canvas can = new Canvas(resizedBitmap);
-            can.drawARGB(0x00, 0x00, 0x00, 0x00);
-            can.drawBitmap(bitmap, 0, 0, null);
-        }
-        glCaptureTextureId = OpenGlUtils.loadTexture(
-                resizedBitmap != null ? resizedBitmap : bitmap,
-                glCaptureTextureId,
-                recycle);
-
-        if (resizedBitmap != null) {
-            resizedBitmap.recycle();
-        }
-        imageWidth = bitmap.getWidth();
-        imageHeight = bitmap.getHeight();
-        adjustImageScalingAndInitialiseBuffers();
-    }
-
-    /*********************************************************************************
-     *
-     *                       Create the ChromaKey filter
-     *
-     *********************************************************************************/
-
-      //Get a sample bitmap for the background  (Jurassic)
-
-//      //Create a new instance of the class
-//    GPUImageFilter getCustomFilter() {
-//           GPUImageChromaKeyBlendFilter chromaFilter =   new GPUImageChromaKeyBlendFilter();
-//           Bitmap redBitmap = createImage(720, 480, Color.RED);
-////         File bitmapFile = new File(Environment.getExternalStorageDirectory() + "/" + "0000-0001/Documents/demo_720.jpg");
-////         Bitmap bitmap = BitmapFactory.decodeFile(bitmapFile.getAbsolutePath());
-//           chromaFilter.setBitmap(redBitmap);
-//           float [] colour = {0.0f, 1.0f, 0.0f};
-//           chromaFilter.setColorToReplace(colour[0], colour[1], colour[2]);
-//           return  chromaFilter;
-//      }
-
-    /**
-     * Generates a solid colour
-     * @param width
-     * @param height
-     * @param color
-     * @return A one color image with the given width and height.
-     */
-    public static Bitmap createImage(int width, int height, int color) {
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        Paint paint = new Paint();
-        paint.setColor(color);
-        canvas.drawRect(0F, 0F, (float) width, (float) height, paint);
-        return bitmap;
-    }
 
     /*********************************************************************************
      *
@@ -498,13 +451,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
      *
      *********************************************************************************/
 
-    protected int getFrameWidth() {
-        return outputWidth;
-    }
-
-    protected int getFrameHeight() {
-        return outputHeight;
-    }
 
     private void adjustImageScalingAndInitialiseBuffers() {
             float outputWidth = this.outputWidth;
@@ -551,17 +497,8 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
             glCaptureTextureBuffer.put(textureCords).position(0);
         }
 
-        public void setScaleType(GPUImage.ScaleType scaleType) {
-            this.scaleType = scaleType;
-        }
-
         private float addDistance(float coordinate, float distance) {
             return coordinate == 0.0f ? distance : 1 - distance;
-        }
-
-        public void setRotationCamera(final Rotation rotation, final boolean flipHorizontal,
-                                      final boolean flipVertical) {
-            setRotation(rotation, flipVertical, flipHorizontal);
         }
 
         public void setRotation(final Rotation rotation) {
@@ -574,18 +511,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
             this.flipHorizontal = flipHorizontal;
             this.flipVertical = flipVertical;
             setRotation(rotation);
-        }
-
-        public Rotation getRotation() {
-            return rotation;
-        }
-
-        public boolean isFlippedHorizontally() {
-            return flipHorizontal;
-        }
-
-        public boolean isFlippedVertically() {
-            return flipVertical;
         }
 
 
