@@ -48,12 +48,7 @@ public class CustomFilterFactory {
             //Use solid magenta background to indicate an error condition if loading the background file is unsuccesful
             backgroundBitmap = CustomFilterFactory.createImage(targetSize.getWidth(), targetSize.getHeight(), Color.MAGENTA);
         }
-        if(isLandscape){
-            return prepareBitmap(backgroundBitmap, targetSize);
-        }
-        else {
-            return preparePortaitBitmap(backgroundBitmap, targetSize);
-        }
+        return prepareBitmap(backgroundBitmap, targetSize, isLandscape);
     }
 
     /**
@@ -72,21 +67,26 @@ public class CustomFilterFactory {
      * Then the image is effectively cropped to the output size in a Bitmap.createBitmap
      * operation that uses the matrix combining identity x scale x translate operations
      *
-     * @param inputBitmap The source bitmap/background image
+     * @param sourceBitmap The source bitmap/background image
      * @param targetSize   The desired output size of the image
-     * @return a rotated, scaled and translated bitmap that is a center crop of the input
+     * @param isLandscape Indicates the orientation to be processed
+     * @return a scaled and translated bitmap that is a center crop of the input, for the portrait
+     * orientation the resulting bitmap is rotated ready for applying as the filter texture.
      */
 
-    public static Bitmap prepareBitmap(Bitmap inputBitmap, Size targetSize ) {
-
-        Bitmap sourceBitmap = inputBitmap;
+    public static Bitmap prepareBitmap(Bitmap sourceBitmap, Size targetSize, boolean isLandscape) {
 
         int w = sourceBitmap.getWidth();
         int h = sourceBitmap.getHeight();
 
         int outputWidth  = targetSize.getWidth();
         int outputHeight = targetSize.getHeight();
- 
+
+        if(!isLandscape) {
+            outputWidth  = targetSize.getHeight();
+            outputHeight = targetSize.getWidth();
+        }
+
         //calculate scale from height
         float scale_factor = ((float) h / (float) outputHeight);
         float scaledWidth = w / scale_factor;
@@ -96,51 +96,19 @@ public class CustomFilterFactory {
         matrix.postScale(1 / scale_factor, 1 / scale_factor);
 
         //Create the output bitmap with the supplied transforms
-        Bitmap scaled = Bitmap.createBitmap(inputBitmap, 0, 0, w, h, matrix, true);
+        Bitmap outputBitmap = Bitmap.createBitmap(sourceBitmap, 0, 0, w, h, matrix, true);
 
         //Now need to crop and translate
         int translationInX = (int) (scaledWidth - outputWidth) / 2;
-        Bitmap outputBitmap = Bitmap.createBitmap(scaled, translationInX, 0, outputWidth, outputHeight);
+        outputBitmap = Bitmap.createBitmap(outputBitmap, translationInX, 0, outputWidth, outputHeight);
 
-        inputBitmap.recycle();
+        if(!isLandscape){
+            outputBitmap = rotateBitmap(outputBitmap);
+        }
+
         sourceBitmap.recycle();
-        scaled.recycle();
 
         return outputBitmap;
-    }
-
-    static Bitmap preparePortaitBitmap(Bitmap inputBitmap, Size targetSize) {
-
-        Bitmap sourceBitmap = inputBitmap;
-
-        int w = sourceBitmap.getWidth();
-        int h = sourceBitmap.getHeight();
-
-        int outputWidth  = targetSize.getWidth();
-        int outputHeight = targetSize.getHeight();
-
-        //calculate scale from height (may enlarge the image)
-        float scale_factor = ((float) h / (float) outputWidth);
-        float scaledWidth = w / scale_factor;
-
-        //add scale transformation
-        Matrix matrix = new Matrix();
-        matrix.postScale(1 / scale_factor, 1 / scale_factor);
-
-        //Create the output bitmap with the supplied transforms
-        Bitmap scaled = Bitmap.createBitmap(inputBitmap, 0, 0, w, h, matrix, true);
-
-        //Now need to crop with correct window
-        int translationInX = (int) (scaledWidth - outputHeight) / 2;
-        Bitmap cropped = Bitmap.createBitmap(scaled, translationInX, 0, outputHeight, outputWidth);
-
-        Bitmap rotated = rotateBitmap(cropped);
-
-        inputBitmap.recycle();
-        sourceBitmap.recycle();
-        scaled.recycle();
-
-        return rotated;
     }
 
     static Bitmap rotateBitmap(Bitmap sourceBitmap) {
@@ -155,8 +123,6 @@ public class CustomFilterFactory {
                 rotationMatrix,
                 true);
     }
-
-
 
     /**
      * Generates a solid colour
