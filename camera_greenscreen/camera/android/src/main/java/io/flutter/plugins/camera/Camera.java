@@ -194,6 +194,7 @@ public class Camera
     cameraCaptureCallback = CameraCaptureCallback.create(this, captureTimeouts, captureProps);
 
     filterPipelineController = new FilterPipelineController(flutterTexture.surfaceTexture(), activity);
+    filterPipelineController.setOrientation(getCurrentOrientation());
 
     startBackgroundThread();
   }
@@ -600,15 +601,19 @@ public class Camera
     // Have all features update the builder.
     updateBuilderSettings(stillBuilder);
 
-    // Orientation.
-    final PlatformChannel.DeviceOrientation lockedOrientation =
-            ((SensorOrientationFeature) cameraFeatures.getSensorOrientation())
-                    .getLockedCaptureOrientation();
+    //Aardman-Animator changes
+    int stillOrientation = getCurrentOrientation();
+
     stillBuilder.set(
             CaptureRequest.JPEG_ORIENTATION,
-            lockedOrientation == null
-                    ? getDeviceOrientationManager().getPhotoOrientation()
-                    : getDeviceOrientationManager().getPhotoOrientation(lockedOrientation));
+            stillOrientation
+          );
+
+    /**
+     *  Belt and braces, should be the same as initial orientation because
+     *  camera restarts on device orientation
+     */
+    filterPipelineController.setOrientation(stillOrientation);
 
     CameraCaptureSession.CaptureCallback captureCallback =
             new CameraCaptureSession.CaptureCallback() {
@@ -1015,6 +1020,21 @@ public class Camera
   }
 
   /**
+   * Convenience call
+   */
+   int getCurrentOrientation(){
+     // Orientation.
+     final PlatformChannel.DeviceOrientation lockedOrientation =
+             ((SensorOrientationFeature) cameraFeatures.getSensorOrientation())
+                     .getLockedCaptureOrientation();
+
+     int currentOrientation =   lockedOrientation == null
+             ? getDeviceOrientationManager().getPhotoOrientation()
+             : getDeviceOrientationManager().getPhotoOrientation(lockedOrientation);
+     return currentOrientation;
+   }
+
+  /**
    * Sets zoom level from dart.
    *
    * @param result Flutter result.
@@ -1323,7 +1343,6 @@ public class Camera
                 catch (Exception e){
                   dartMessenger.error(flutterResult,"0", e.getLocalizedMessage(), null);
                 }
-
                 dartMessenger.finish(flutterResult, absolutePath);
               }
 

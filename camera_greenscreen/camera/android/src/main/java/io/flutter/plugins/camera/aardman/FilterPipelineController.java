@@ -23,6 +23,7 @@ import jp.co.cyberagent.android.gpuimage.GPUImage;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageChromaKeyBlendFilter;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageGrayscaleFilter;
+import jp.co.cyberagent.android.gpuimage.util.Rotation;
 
 /**
  * Acts as the controller of the capture flow
@@ -67,6 +68,29 @@ public class FilterPipelineController {
     Size viewSize;
 
     /**
+     * From DeviceOrientationManager.getPhotoOrientation
+     *
+     *  {0:LANDSCAPE_RIGHT, 180:LANDSCAPE_LEFT, 90:PORTRAIT_UP, 270:PORTRAIT_DOWN}
+     *
+     *  These are all relevant for the rear camera. Landscape is flipped for the front camera.
+     *
+     */
+    int deviceOrientation = 0;
+
+    /**
+     *  GPU_IMAGE has a Rotation enum that corresponds to the following mapping
+     *
+     *  {0:NORMAL, 180:ROTATION_180, 90:ROTATION_90, 270:ROTATION_270}
+     *
+     *  This is updated synchronously wit deviceOrientation
+     */
+    Rotation gpuImageRotation;
+
+    boolean isLandscape(){
+        return (deviceOrientation == 0 || deviceOrientation == 180);
+    }
+
+    /**
      * For handling still image capture
      */
     FilterParameters currentFilterParameters = new FilterParameters();
@@ -99,6 +123,20 @@ public class FilterPipelineController {
         ((GLWorker) filterRenderer).setSize(previewSize);
     }
 
+    /**
+     * This is set on initialisation and before capturing an image. With the Animator app
+     * this only needs to be set on initialisation as the camera is re-created whenever the
+     * device changes orientation. However it is also set when initiating a
+     * still capture even though its not needed for the Animator use case
+     * @param orientation
+     */
+    public void setOrientation(int orientation){
+        deviceOrientation = orientation;
+        gpuImageRotation = Rotation.fromInt(orientation);
+        if (filterRenderer != null){
+            filterRenderer.setRotation(gpuImageRotation);
+        }
+    }
 
     /**
      *  Used by the Camera controller to setup the CaptureSession
