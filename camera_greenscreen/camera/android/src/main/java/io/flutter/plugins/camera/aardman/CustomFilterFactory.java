@@ -75,6 +75,10 @@ public class CustomFilterFactory {
 
     public static Bitmap prepareBitmap(Bitmap inputBitmap, Size targetSize, boolean isLandscape) {
 
+        if(!isLandscape){
+            return preparePortaitBitmap(inputBitmap, targetSize);
+        }
+
         Bitmap sourceBitmap = inputBitmap;
 
         int w = sourceBitmap.getWidth();
@@ -83,6 +87,7 @@ public class CustomFilterFactory {
         int outputWidth  = targetSize.getWidth();
         int outputHeight = targetSize.getHeight();
 
+        //landscape defaults
         //calculate scale from height
         //eg: 1000 / 800 = 1.39.
         float scale_factor = ((float) h / (float) outputHeight);
@@ -101,23 +106,48 @@ public class CustomFilterFactory {
         Bitmap scaled = Bitmap.createBitmap(inputBitmap, 0, 0, w, h, matrix, true);
 
         //Now need to crop and translate
-        Bitmap cropped = Bitmap.createBitmap(scaled, translationInX, 0, outputWidth, outputHeight);
+        Bitmap outputBitmap = Bitmap.createBitmap(scaled, translationInX, 0, outputWidth, outputHeight);
 
-        Bitmap outputBitmap;
-
-        if(isLandscape){
-            outputBitmap = cropped;
-        }
-        else {
-            outputBitmap = rotateBitmap(cropped);
-            cropped.recycle();
-        }
-
-       inputBitmap.recycle();
-       sourceBitmap.recycle();
-       scaled.recycle();
+//       inputBitmap.recycle();
+//       sourceBitmap.recycle();
+//       scaled.recycle();
 
        return outputBitmap;
+    }
+
+    static Bitmap preparePortaitBitmap(Bitmap inputBitmap, Size targetSize) {
+
+        Bitmap sourceBitmap = inputBitmap;
+
+        int w = sourceBitmap.getWidth();
+        int h = sourceBitmap.getHeight();
+
+        int outputWidth  = targetSize.getWidth();
+        int outputHeight = targetSize.getHeight();
+
+        //calculate scale from height (may enlarge the image)
+        float scale_factor = ((float) h / (float) outputWidth);
+        float scaledWidth = w / scale_factor;
+
+        //add scale transformation
+        Matrix matrix = new Matrix();
+        matrix.postScale(1 / scale_factor, 1 / scale_factor);
+
+        //Create the output bitmap with the supplied transforms
+        Bitmap scaled = Bitmap.createBitmap(inputBitmap, 0, 0, w, h, matrix, true);
+
+        //Now need to crop with correct window
+        int translationInX = (int) (scaledWidth - outputHeight) / 2;
+        Bitmap cropped = Bitmap.createBitmap(scaled, translationInX, 0, outputHeight, outputWidth);
+
+        Bitmap rotated = rotateBitmap(cropped);
+
+
+    //       inputBitmap.recycle();
+    //       sourceBitmap.recycle();
+    //       scaled.recycle();
+
+         return rotated;
     }
 
     static Bitmap rotateBitmap(Bitmap sourceBitmap) {
