@@ -134,7 +134,7 @@ public class FilterPipelineController {
         deviceOrientation = orientation;
         gpuImageRotation = Rotation.fromInt(orientation);
         if (filterRenderer != null){
-            filterRenderer.setRotation(gpuImageRotation);
+           // filterRenderer.setRotation(gpuImageRotation);
         }
     }
 
