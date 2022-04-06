@@ -1332,20 +1332,20 @@ public class Camera
             new ImageSaver.Callback() {
               @Override
               public void onComplete(String absolutePath) {
-//                try {
-//                  //
-//                  //if portrait, Exif orientation = 6
-//                  //else do not set
-//                  ExifInterface exif = new ExifInterface(absolutePath);
-//                  exif.setAttribute(ExifInterface.TAG_ORIENTATION, "6");
-//                  exif.saveAttributes();
-//                }
-//                catch (Exception e){
-//                  dartMessenger.error(flutterResult,"0", e.getLocalizedMessage(), null);
-//                }
-                dartMessenger.finish(flutterResult, absolutePath);
-              }
 
+                if (!filterPipelineController.isLandscape()) {
+                  try {
+                    ExifInterface exif = new ExifInterface(absolutePath);
+                    exif.setAttribute(ExifInterface.TAG_ORIENTATION, "6");
+                    exif.saveAttributes();
+                  } catch (Exception e) {
+                    dartMessenger.error(flutterResult, "0", e.getLocalizedMessage(), null);
+                  }
+                  dartMessenger.finish(flutterResult, absolutePath);
+                } else {
+                  dartMessenger.finish(flutterResult, absolutePath);
+                }
+              }
               @Override
               public void onError(String errorCode, String errorMessage) {
                 dartMessenger.error(flutterResult, errorCode, errorMessage, null);
