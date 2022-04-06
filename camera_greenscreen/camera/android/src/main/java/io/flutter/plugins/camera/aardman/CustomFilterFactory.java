@@ -11,7 +11,6 @@ import android.util.Size;
 import androidx.annotation.Nullable;
 
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageChromaKeyBlendFilter;
-import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
 
 
 //Used to create the custom filter for both preview and capture variations
@@ -23,74 +22,80 @@ public class CustomFilterFactory {
     public static GPUImageChromaKeyBlendFilter getCustomFilter(FilterParameters parameters) {
         GPUImageChromaKeyBlendFilter chromaFilter = new GPUImageChromaKeyBlendFilter();
 
-        float [] colour = parameters.getColorToReplace();
+        float[] colour = parameters.getColorToReplace();
         chromaFilter.setColorToReplace(colour[0], colour[1], colour[2]);
         return chromaFilter;
     }
 
-    public static void setChromaBackground(GPUImageChromaKeyBlendFilter filter, Size outputSize, FilterParameters parameters) {
+    public static void setChromaBackground(GPUImageChromaKeyBlendFilter filter, Size outputSize, FilterParameters parameters, boolean isLandscape) {
         //gets a sized and prepared background image to match the size of the captured image or preview
-        Bitmap captureBackground = CustomFilterFactory.getBackground(parameters.backgroundImage, outputSize);
+        Bitmap captureBackground = CustomFilterFactory.getBackground(parameters.backgroundImage, outputSize, isLandscape);
         filter.setBitmap(captureBackground);
     }
 
 
     /**
      * Gets the background scaled and cropped to the desired targetSize
-     * @param filePath fully qualified path the the background image source
-     * @param targetSize desired size of the background
+     *
+     * @param filePath    fully qualified path the the background image source
+     * @param targetSize  desired size of the background
+     * @param isLandscape
      * @return
      */
-    public static Bitmap getBackground(@Nullable String filePath, Size targetSize){
+    public static Bitmap getBackground(@Nullable String filePath, Size targetSize, boolean isLandscape) {
         Bitmap backgroundBitmap = BitmapFactory.decodeFile(filePath);
         if (backgroundBitmap == null) {
             //Use solid magenta background to indicate an error condition if loading the background file is unsuccesful
             backgroundBitmap = CustomFilterFactory.createImage(targetSize.getWidth(), targetSize.getHeight(), Color.MAGENTA);
         }
-        return CustomFilterFactory.prepareBitmap(backgroundBitmap, targetSize);
+        return CustomFilterFactory.prepareBitmap(backgroundBitmap, targetSize, isLandscape);
     }
 
     /**
      * Prepare the bitmap for use in the chroma filter
-     *
+     * <p>
      * Note that backgrounds are assumed to be widescreen landscape images
      * these need to be scaled, cropped and translated to fit the height of the preview
      * or capture image that they are being composited with.
-     *
+     * <p>
      * The widescreen image scaling ratio is determined by the height, which is always scaled
      * to fit the height of the capture or preview image
-     *
+     * <p>
      * Then this resized image is translated in the X dimension so that its center is
      * centered relative to the preview or capture image
-     *
+     * <p>
      * Then the image is effectively cropped to the output size in a Bitmap.createBitmap
      * operation that uses the matrix combining identity x scale x translate operations
      *
-     * @param inputBitmap The source bitmap/background image
-     * @param targetSize The desired output size of the image
-     * @return a scaled and translated bitmap that is a center crop of the input
+     * @param sourceBitmap The source bitmap/background image
+     * @param targetSize   The desired output size of the image
+     * @param isLandscape
+     * @return a rotated, scaled and translated bitmap that is a center crop of the input
      */
-    public static Bitmap prepareBitmap(Bitmap inputBitmap, Size targetSize) {
 
-        int w = inputBitmap.getWidth();
-        int h = inputBitmap.getHeight();
+    public static Bitmap prepareBitmap(Bitmap inputBitmap, Size targetSize, boolean isLandscape) {
+
+        Bitmap sourceBitmap = inputBitmap;
+
+        int w = sourceBitmap.getWidth();
+        int h = sourceBitmap.getHeight();
 
         int outputWidth  = targetSize.getWidth();
         int outputHeight = targetSize.getHeight();
 
         //calculate scale from height
         //eg: 1000 / 800 = 1.39.
-        float scale_factor = ( (float) h /  (float) outputHeight);
+        float scale_factor = ((float) h / (float) outputHeight);
 
         //Calculate x translation
         //eg :  1600/1.39 -> 1152
         float scaledWidth = w / scale_factor;
         //eg :  1152 - 1600 ->  -224 (translate 200 left to recenter image)
-        int translationInX =  (int) (scaledWidth - outputWidth) / 2;
+        int translationInX = (int) (scaledWidth - outputWidth) / 2;
 
         //add scale transformation
         Matrix matrix = new Matrix();
-        matrix.postScale(1/scale_factor, 1/scale_factor);
+        matrix.postScale(1 / scale_factor, 1 / scale_factor);
 
         //Create the output bitmap with the supplied transforms
         Bitmap scaled = Bitmap.createBitmap(inputBitmap, 0, 0, w, h, matrix, true);
@@ -98,8 +103,36 @@ public class CustomFilterFactory {
         //Now need to crop and translate
         Bitmap cropped = Bitmap.createBitmap(scaled, translationInX, 0, outputWidth, outputHeight);
 
-        return cropped;
+        Bitmap outputBitmap;
+
+        if(isLandscape){
+            outputBitmap = cropped;
+        }
+        else {
+            outputBitmap = rotateBitmap(cropped);
+            cropped.recycle();
+        }
+
+       inputBitmap.recycle();
+       sourceBitmap.recycle();
+       scaled.recycle();
+
+       return outputBitmap;
     }
+
+    static Bitmap rotateBitmap(Bitmap sourceBitmap) {
+        Matrix rotationMatrix = new Matrix();
+        float rotation = -90.f;
+        rotationMatrix.postRotate(rotation);
+        return Bitmap.createBitmap(sourceBitmap,
+                0,
+                0,
+                sourceBitmap.getWidth(),
+                sourceBitmap.getHeight(),
+                rotationMatrix,
+                true);
+    }
+
 
 
     /**

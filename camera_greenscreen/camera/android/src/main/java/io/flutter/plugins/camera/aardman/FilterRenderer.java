@@ -110,6 +110,9 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
      private Boolean captureFrameReadyForFiltering = false;
      private Bitmap stillImageBitmap;
      private Runnable stillImageCompletion;
+     //texture rotation used to rotate bitmap when it is added to the
+     //choma filter
+     private boolean textureIsLandscape = true;
 
 
     /**
@@ -175,6 +178,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
      *                                Flutter API calls
      *********************************************************************************/
 
+
     /**
      *   Enable/disable filtering
      */
@@ -199,6 +203,10 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
         altFilter = temp;
     }
 
+    public void setTextureIsLandscape(boolean isLandscape){
+        textureIsLandscape = isLandscape;
+    }
+
     public void updateParameters(FilterParameters parameters){
 
         //we need to find which filter needs updating
@@ -219,7 +227,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker, StillImag
 
         if( parameters.backgroundImage == null ||
                 (parameters.backgroundImage!= null)){
-            CustomFilterFactory.setChromaBackground(filter, new Size(outputWidth, outputHeight), parameters);
+            CustomFilterFactory.setChromaBackground(filter, new Size(outputWidth, outputHeight), parameters, textureIsLandscape);
         }
 
         this.previewFilterParameters = parameters;

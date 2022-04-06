@@ -2,12 +2,7 @@ package io.flutter.plugins.camera.aardman;
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.ImageFormat;
-import android.graphics.Matrix;
-import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
 import android.media.ImageReader;
 import android.util.Log;
@@ -15,14 +10,8 @@ import android.util.Size;
 import android.view.Surface;
 import android.graphics.Bitmap;
 
-import androidx.annotation.Nullable;
-
-import java.util.HashMap;
-
 import jp.co.cyberagent.android.gpuimage.GPUImage;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageChromaKeyBlendFilter;
-import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
-import jp.co.cyberagent.android.gpuimage.filter.GPUImageGrayscaleFilter;
 import jp.co.cyberagent.android.gpuimage.util.Rotation;
 
 /**
@@ -136,7 +125,7 @@ public class FilterPipelineController {
         if (filterRenderer != null){
             //does not have correct effect, rotates the entire preview unnecessarily
             //probably the need is just to rotate the inpput bitmap to the filter itself
-           //filterRenderer.setRotation(gpuImageRotation);
+            filterRenderer.setTextureIsLandscape(isLandscape());
         }
     }
 
@@ -188,7 +177,7 @@ public class FilterPipelineController {
              GPUImage gpuImage = new GPUImage(this.context);
              Size outputSize = new Size(stillImageBitmap.getWidth(), stillImageBitmap.getHeight());
              GPUImageChromaKeyBlendFilter filter = CustomFilterFactory.getCustomFilter(this.currentFilterParameters);
-             CustomFilterFactory.setChromaBackground(filter, outputSize, currentFilterParameters);
+             CustomFilterFactory.setChromaBackground(filter, outputSize, currentFilterParameters, isLandscape());
              gpuImage.setFilter(filter);
              this.currentBitmap = gpuImage.getBitmapWithFilterApplied(stillImageBitmap);
          }
