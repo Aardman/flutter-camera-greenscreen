@@ -71,7 +71,7 @@ class _CameraExampleHomeState extends State<CameraExampleHome> with WidgetsBindi
   double _baseScale = 1.0;
   PermissionStatus? _permissionStatus;
 
-  bool fileToggle = true;
+  bool sampleToggle = true;
 
   // Counting pointers (number of user fingers on screen)
   int _pointers = 0;
@@ -585,20 +585,22 @@ class _CameraExampleHomeState extends State<CameraExampleHome> with WidgetsBindi
 
 
     // load the image from the flutter assets bundle and save it in a temp folder on device
-    String? imagePath = fileToggle ?
+    String? imagePath = sampleToggle ?
           "assets/backgrounds/bkgd_01.jpg" :
           "assets/backgrounds/bkgd_02.jpg";
 
-    fileToggle = !fileToggle;
+    sampleToggle = !sampleToggle;
 
     File tempFileForChroma = await getImageFileFromAssets(imagePath);
     print(imagePath + " : imagePath ->" + tempFileForChroma.toString());
     String? fullPath = tempFileForChroma.path;
 
+    var colours = sampleToggle ? [0.0, 255.0, 0.0] : [0.0,  0.0, 255.0];
+
     var data = {
       "backgroundPath": fullPath,
       "hueRange": [0.35, 0.65],
-      "colour": [0.0, 255.0, 0.0]
+      "colour": colours
     };
 
     await cameraController.updateFilters(data);

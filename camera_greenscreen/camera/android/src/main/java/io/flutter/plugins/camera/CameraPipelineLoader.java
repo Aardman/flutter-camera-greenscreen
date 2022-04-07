@@ -7,6 +7,7 @@ import android.hardware.camera2.CameraAccessException;
 import android.media.ImageReader;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Size;
 import android.view.Surface;
 
 import androidx.annotation.Nullable;
@@ -26,7 +27,7 @@ import io.flutter.view.TextureRegistry;
  * on the main thread. Therefore we need to setup the target texture at the time we
  * instantiate the camera.
  *
- * The name represents two responsibilities
+ * Responsibilities
  *
  * - firstly creating a 'pipeline',  ie: establishing
  * the target texture used to render previews and as the source for an ImageReader for the
@@ -50,32 +51,43 @@ public class CameraPipelineLoader {
         this.activity = activity;
     }
 
+    //TODO: Map remaining values for other preview sizes if needed
+    public Size sizeForPreset(ResolutionPreset preset){
+        if (preset == ResolutionPreset.medium) {
+            return new Size(720, 480);
+        }
+        else {
+            return new Size(720, 480);
+        }
+    }
+
     //Setup a filtered pipeline and register the required texture
     //with Flutter.
-    private TextureRegistry.SurfaceTextureEntry makePipeline(){
+    private TextureRegistry.SurfaceTextureEntry makePipeline(ResolutionPreset preset){
         TextureRegistry.SurfaceTextureEntry surfaceTextureEntry =
                 textureRegistry.createSurfaceTexture();
 
         SurfaceTexture surfaceTexture = surfaceTextureEntry.surfaceTexture();
-        //TODO: REmove hard coded size
-        surfaceTexture.setDefaultBufferSize(720, 480);
+
+        surfaceTexture.setDefaultBufferSize(sizeForPreset(preset).getWidth(), sizeForPreset(preset).getHeight());
 
         return surfaceTextureEntry;
     }
 
     public Camera instantiateCameraPipeline(MethodCall call, MethodChannel.Result result) throws CameraAccessException {
+
         String cameraName = call.argument("cameraName");
         String preset = call.argument("resolutionPreset");
         boolean enableAudio = call.argument("enableAudio");
 
-        TextureRegistry.SurfaceTextureEntry flutterSurfaceTexture = makePipeline();
+        ResolutionPreset resolutionPreset = ResolutionPreset.valueOf(preset);
+        TextureRegistry.SurfaceTextureEntry flutterSurfaceTexture = makePipeline(resolutionPreset);
 
         DartMessenger dartMessenger =
                 new DartMessenger(
                         messenger, flutterSurfaceTexture.id(), new Handler(Looper.getMainLooper()));
         CameraProperties cameraProperties =
                 new CameraPropertiesImpl(cameraName, CameraUtils.getCameraManager(activity));
-        ResolutionPreset resolutionPreset = ResolutionPreset.valueOf(preset);
 
         Camera camera =
                 new Camera(

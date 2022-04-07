@@ -1170,11 +1170,6 @@ public class Camera
     Size viewSize = new Size(resolutionFeature.getPreviewSize().getWidth(),
                             resolutionFeature.getPreviewSize().getHeight());
 
-    //Set the target surface default buffer size
-    //TODO: set this from the camera features ?
-//    SurfaceTexture surfaceTexture = flutterTexture.surfaceTexture();
-//    surfaceTexture.setDefaultBufferSize(viewSize.getWidth(), viewSize.getHeight());
-
     //Setup the rendering pipeline
     filterPipelineController.setSize(viewSize);
     Surface captureSurface = filterPipelineController.getImageReaderSurface();
@@ -1333,6 +1328,7 @@ public class Camera
               @Override
               public void onComplete(String absolutePath) {
 
+                //Required to ensure portrait images appear correctly
                 if (!filterPipelineController.isLandscape()) {
                   try {
                     ExifInterface exif = new ExifInterface(absolutePath);
