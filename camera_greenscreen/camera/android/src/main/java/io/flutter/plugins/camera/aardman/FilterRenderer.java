@@ -30,7 +30,7 @@ import jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil;
  * Handle calls for onDraw and onPreviewFrame events for the GLThread and CameraThread respectively
  * Schedule rendering
  * Handle some Graphics calculations
- *     
+ *
 */
 public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
 
