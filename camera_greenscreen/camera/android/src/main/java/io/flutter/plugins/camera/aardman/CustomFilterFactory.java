@@ -33,7 +33,6 @@ public class CustomFilterFactory {
         filter.setBitmap(captureBackground);
     }
 
-
     /**
      * Gets the background scaled and cropped to the desired targetSize
      *
@@ -139,6 +138,5 @@ public class CustomFilterFactory {
         canvas.drawRect(0F, 0F, (float) width, (float) height, paint);
         return bitmap;
     }
-
 
 }

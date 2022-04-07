@@ -5,7 +5,9 @@
 // ignore_for_file: public_member_api_docs
 
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
@@ -68,6 +70,8 @@ class _CameraExampleHomeState extends State<CameraExampleHome> with WidgetsBindi
   double _currentScale = 1.0;
   double _baseScale = 1.0;
   PermissionStatus? _permissionStatus;
+
+  bool fileToggle = true;
 
   // Counting pointers (number of user fingers on screen)
   int _pointers = 0;
@@ -579,10 +583,16 @@ class _CameraExampleHomeState extends State<CameraExampleHome> with WidgetsBindi
       return;
     }
 
+
     // load the image from the flutter assets bundle and save it in a temp folder on device
-    String? imagePath = "assets/backgrounds/testbg.jpg";
+    String? imagePath = fileToggle ?
+          "assets/backgrounds/bkgd_01.jpg" :
+          "assets/backgrounds/bkgd_02.jpg";
+
+    fileToggle = !fileToggle;
+
     File tempFileForChroma = await getImageFileFromAssets(imagePath);
-    print("imagePath " + tempFileForChroma.toString());
+    print(imagePath + " : imagePath ->" + tempFileForChroma.toString());
     String? fullPath = tempFileForChroma.path;
 
     var data = {

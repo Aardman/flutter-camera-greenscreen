@@ -26,23 +26,11 @@ import jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil;
  * Responsibilities
  *
  * Manage the double buffered rendering process
- * Hold a reference to the Filter/glProgram pipeline
- * Handle calls for onDraw and onPreviewFrame events for each buffer
+ * Hold a reference to the Filters and which of them is enabled on each draw cycle
+ * Handle calls for onDraw and onPreviewFrame events for the GLThread and CameraThread respectively
  * Schedule rendering
- * Handle some Graphics calculations re: transforms such as rotation and scaling
- *
- *
- * Note that there are two rendering behaviours that ideally would be split out
- * these are a) for the preview rendering and b) for the rendering of the captured
- * still images
- *
- * Due to time pressure these are both in this class currently but are divided into
- * two commented sections with the state separated and commented for future easier
- * splitting
- *
- * GLBridge needs to determine whether what rendering is required so there are two
- * render pathways in the run loop corresponding with that.
- *
+ * Handle some Graphics calculations
+ *     
 */
 public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
 
