@@ -110,11 +110,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
     //Indicates that filter is not ready for use
     //boolean filterIsBeingReplaced = false;
 
-    /**
-     * Used to provide separate (unshared) objects for capture
-     * part of the rendering pipeline
-     */
-    private FloatBuffer glCaptureTextureBuffer;
 
     /**
      * OpenGL render control and queue, this acts as the buffer for frames
@@ -122,7 +117,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
      * from the main openGL render loop
      */
     private Queue<Runnable> openGLTaskQueue;
-    //private Queue<Runnable> controlQueue;
 
     /*********************************************************************************
      *
@@ -132,7 +126,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
 
     public FilterRenderer() {
         openGLTaskQueue = new LinkedList<>();
-        //controlQueue = new LinkedList<>();
     }
 
     /**
@@ -188,10 +181,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer();
 
-        glCaptureTextureBuffer = ByteBuffer.allocateDirect(TEXTURE_NO_ROTATION.length * 4)
-                .order(ByteOrder.nativeOrder())
-                .asFloatBuffer();
-
         setRotation(Rotation.NORMAL, false, false);
     }
 
@@ -211,8 +200,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
     /*********************************************************************************
      *                                Flutter API calls
      *********************************************************************************/
-
-
+ 
     /**
      * Enable/disable filtering
      */
