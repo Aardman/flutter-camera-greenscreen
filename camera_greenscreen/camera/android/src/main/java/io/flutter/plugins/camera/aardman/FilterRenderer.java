@@ -1,16 +1,8 @@
 package io.flutter.plugins.camera.aardman;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.opengl.GLES20;
-import android.os.Build;
 import android.util.Log;
 import android.util.Size;
-
-import androidx.annotation.RequiresApi;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -59,8 +51,10 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
     /**
      * Filters
      */
-    private GPUImageFilter glFilter;
-    private GPUImageFilter altFilter;
+    private GPUImageChromaKeyBlendFilter glFilter;
+    private GPUImageFilter copyFilter;  //shows preview with no effect, copy input pixels to output
+    private boolean glFilterIsEnabled = false;
+    private boolean needsToRestoreEnabledFilterAfterRebuild = false;
 
     /**
      * Display parameters
@@ -107,9 +101,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
      */
     FilterParameters previewFilterParameters;
 
-    //Indicates that filter is not ready for use
-    //boolean filterIsBeingReplaced = false;
-
 
     /**
      * OpenGL render control and queue, this acts as the buffer for frames
@@ -131,43 +122,49 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
     /**
      *   Setup sequence regarding filters
      *
-     *   On initialisation - setup the task queues
+     *   On initialisation - setup the task queue and identity filter
      *
-     *   OnCreate - setup the GL resources and the identity filter
+     *   OnCreate    - setup the GL resources and the identity filter
      *
-     *   On enable   - if the identity filter is running and there is no chroma, leave as is
-     *
-     *   On disable  - if the chroma filter is running swap filters
+     *   On enable   - glFilter will be used to render
+     *   On disable  - copyFilter will be used to render
      *
      *   On update filtering
      *
-     *               - reset the current parameters
+     *               - reset the current parameters that do not require recreating the filter
      *
-     *               - if there is no chroma filter, create it with the current parameters
-     *                 set it as the relevant active/inactive filter
+     *               - if there is no chroma filter, create it with the parameters supplied
+     *                 in the update (on the GLThread)
      *
-     *               - if there is a chroma filter, recreate the filters
+     *               - if there is a chroma filter and it has no bitmap assigned
+     *                    assign a bitmap (on the GLThread)
      *
-     *   When recreating the filters
-     *               - switch rendering to the identity filter
-     *               - destroy and re-create the filter with the current parameters and store
-     *                 in the alt filter
-     *               - toggle on the chroma filter
+     *               - if there is a chroma filter
+     *                     - if enabled, record was enabled state
+     *                       (on the GLThread)
+     *                     - destroy and re-create the filter with the current parameters and store
+     *                     - if was enabled, enable the filter
      *
      *   Client sequences
      *
-     *     - initialise the camera, creates the identity filter and starts the capture
+     *     - initialise the camera  (creates the identity filter and starts the capture)
+     *     - enabling filter has no effect until updateFilters has been called the first time to set the background
      *     - update filters
-     *     - enable/update/disable filters as desired.
+     *     - enable disable filter at will
      *
      */
-
 
     //Setup GL environment
     //Needs to be called from the GL thread
     public void onCreate() {
         setupGLObjects();
-        initialiseFilters();
+        initialiseCopyFilter();
+    }
+
+    void initialiseCopyFilter(){
+        copyFilter = new GPUImageFilter();
+        copyFilter.ifNeedInit();
+        copyFilter.onOutputSizeChanged(outputWidth, outputHeight);
     }
 
     private void setupGLObjects() {
@@ -184,37 +181,28 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
         setRotation(Rotation.NORMAL, false, false);
     }
 
-    private void initialiseFilters() {
-        glFilter = new GPUImageFilter();
+    private void setGLFilter(GPUImageChromaKeyBlendFilter filter) {
+        glFilter = filter;
         glFilter.ifNeedInit();
         glFilter.onOutputSizeChanged(outputWidth, outputHeight);
-    }
-
-    private void setFilter(GPUImageChromaKeyBlendFilter filter) {
-        altFilter = filter;
-        altFilter.ifNeedInit();
-        altFilter.onOutputSizeChanged(outputWidth, outputHeight);
     }
 
 
     /*********************************************************************************
      *                                Flutter API calls
      *********************************************************************************/
- 
+
     /**
      * Enable/disable filtering
      */
 
     public void enableFilter() {
-        if (glFilter != null && altFilter != null && !isChroma(glFilter)) {
-            toggleFilter();
-        }
+        if (glFilter != null)
+          glFilterIsEnabled = true;
     }
 
     public void disableFilter() {
-        if (glFilter != null && altFilter != null && isChroma(glFilter)) {
-            toggleFilter();
-        }
+        glFilterIsEnabled = false;
     }
 
     /**
@@ -223,38 +211,32 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
 
     public void updateParameters(final FilterParameters parameters) {
 
-        //we need to find which filter needs updating
-        GPUImageChromaKeyBlendFilter filter = null;
-        if (isChroma(altFilter)) {
-            filter = (GPUImageChromaKeyBlendFilter) altFilter;
-        } else if (isChroma(glFilter)) {
-            filter = (GPUImageChromaKeyBlendFilter) glFilter;
+        //Set simple parameters if there is a glFilter available
+        if (glFilter != null && parameters.replacementColour != null) {
+            float[] colour = parameters.getColorToReplace();
+            glFilter.setColorToReplace(colour[0], colour[1], colour[2]);
         }
 
         /**
-         * If there is no chroma filter, then its first time so we create one
-         * the parameters and a background file path
+         * Setting the main filter background
          */
-        if (filter == null) {
+        if (glFilter == null) {
             appendToTaskQueue( ()->{
                 setupChromaFilter(parameters);
             }, openGLTaskQueue);
         }
-        else if (filter != null && parameters.backgroundImage != null){
-            appendToTaskQueue(()->{
-                restartChromaFilter(parameters);
-            }, openGLTaskQueue);
-        }
-        else if (filter != null && filter.getBitmap() == null) {
-            CustomFilterFactory.setChromaBackground(filter,
+        //filter needs to be initially set if parameters were set without a background before
+        else if (glFilter != null && glFilter.getBitmap() == null) {
+            CustomFilterFactory.setChromaBackground(glFilter,
                     new Size(outputWidth, outputHeight),
                     parameters,
                     textureIsLandscape);
         }
-
-        if (parameters.replacementColour != null) {
-            float[] colour = parameters.getColorToReplace();
-            filter.setColorToReplace(colour[0], colour[1], colour[2]);
+        //filter needs replacing
+        else if (glFilter != null && parameters.backgroundImage != null){
+            appendToTaskQueue(()->{
+                restartChromaFilter(parameters);
+            }, openGLTaskQueue);
         }
 
         this.previewFilterParameters = parameters;
@@ -265,6 +247,9 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
      */
 
     /**
+     *
+     *   Should be called on GLThread
+     *
      *    - record enablement state
      *    - switch rendering to the identity filter
      *    - destroy and re-create the filter with the current parameters and store
@@ -275,68 +260,37 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
      */
     void restartChromaFilter(FilterParameters parameters){
 
-        if(isChroma(glFilter)){
+        if (glFilterIsEnabled) {
+            needsToRestoreEnabledFilterAfterRebuild = true;
             disableFilter();
         }
 
-        appendToTaskQueue(()->  {
-            rebuildChromaFilter(parameters);
-            }, openGLTaskQueue );
+        synchronized (glFilter){
+            glFilter.destroy();
+            glFilter.notify();
+        }
+
+        setupChromaFilter(parameters);
+
+        //restore enabled if it was set
+        if(needsToRestoreEnabledFilterAfterRebuild){
+            needsToRestoreEnabledFilterAfterRebuild = false;
+            enableFilter();
+        }
 
     }
-
-
-    //Replaces the chroma filter using the fresh parameters
-    void rebuildChromaFilter(FilterParameters parameters){
-        if(isChroma(glFilter)){
-            return;
-        }
-        else if(isChroma(altFilter)){
-            synchronized (altFilter){
-                GPUImageChromaKeyBlendFilter oldFilter = (GPUImageChromaKeyBlendFilter) altFilter;
-                oldFilter.destroy();
-                oldFilter.notify();
-            }
-            setupChromaFilter(parameters);
-        }
-    }
-
 
     void setupChromaFilter(FilterParameters parameters){
         GPUImageChromaKeyBlendFilter filter = CustomFilterFactory.getCustomFilter(parameters);
-        if (parameters.backgroundImage != null) {
-            CustomFilterFactory.setChromaBackground(filter,
-                    new Size(outputWidth, outputHeight),
-                    parameters,
-                    textureIsLandscape);
-        }
-        setFilter(filter);
-    }
+        /**
+         * Will add a coloured background if none is supplied as an indication of error condition
+         */
+        CustomFilterFactory.setChromaBackground(filter,
+                new Size(outputWidth, outputHeight),
+                parameters,
+                textureIsLandscape);
 
-    //In general should be set in the disabled 'slot' altFilter storage
-    void setNewChromaFilterInAppropriateState(GPUImageChromaKeyBlendFilter filter){
-        if(altFilter == null){
-            altFilter = filter;
-        }
-    }
-
-    public void toggleFilter() {
-        GPUImageFilter temp = glFilter;
-        glFilter = altFilter;
-        altFilter = temp;
-    }
-
-    public void setIdentityFilterActive(){
-        if(glFilter!=null &&  !isChroma(glFilter)){
-            return;
-        }
-        else if(altFilter !=null && !isChroma(altFilter)){
-            glFilter = altFilter;
-        }
-    }
-
-    boolean isChroma(GPUImageFilter filter){
-        return filter instanceof GPUImageChromaKeyBlendFilter;
+        setGLFilter(filter);
     }
 
     public void setTextureIsLandscape(boolean isLandscape) {
@@ -419,12 +373,14 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
 
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
-        //Copy RGB buffer to glTextureBuffer
+        //copy the RGB buffer to glTextureBuffer ready for filtering (only 1 task per call is expected)
+        //or recreate, update or create the glFilter if this is happening
         runAll(openGLTaskQueue);
 
-        //Perform the filter operation
-        if (glFilter != null) {
-            glFilter.onDraw(glTextureId, glFullScreenQuadBuffer, glTextureBuffer);
+        GPUImageFilter filter = glFilterIsEnabled ? glFilter : copyFilter;
+
+        if (filter != null) {
+            filter.onDraw(glTextureId, glFullScreenQuadBuffer, glTextureBuffer);
         }
 
     }
@@ -438,7 +394,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
      *                             Copied from GPUImage
      *
      *********************************************************************************/
-
 
     private void adjustImageScalingAndInitialiseBuffers() {
             float outputWidth = this.outputWidth;
@@ -481,8 +436,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
             glFullScreenQuadBuffer.put(cube).position(0);
             glTextureBuffer.clear();
             glTextureBuffer.put(textureCords).position(0);
-            glCaptureTextureBuffer.clear();
-            glCaptureTextureBuffer.put(textureCords).position(0);
         }
 
         private float addDistance(float coordinate, float distance) {
