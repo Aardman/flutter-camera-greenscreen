@@ -72,16 +72,28 @@ public class FilterPipeline : NSObject {
     ///filter parameters which may involve re-creating one or more CIFilters
     func updateChangedFilters(_ newValue:FilterParameters?){
         guard let newParams = newValue else { return }
+        
         if let backgroundFilename = newParams.backgroundImage {
             updateBackground(backgroundFilename)
         }
-        if let colour = newParams.maskColor,
-           let threshold = newParams.threshold {
-            updateCustomChromaFilter(colour, threshold)
-        }
+        
         if let maskBounds = newParams.maskBounds {
             updateMaskBounds(maskBounds)
         }
+        
+        //gather changed and/or current values for colour and threshold
+        var colour = filterParameters?.maskColor
+        if let c  = newParams.maskColor {
+            colour = c
+        }
+        
+        var threshold = filterParameters?.threshold
+        if let t = newParams.threshold {
+            threshold = t
+        } 
+        
+        //gather changes to colour and threshold
+        updateCustomChromaFilter(colour, threshold)
     }
     
     func  updateBackground(_ path: String){
@@ -91,30 +103,24 @@ public class FilterPipeline : NSObject {
         }
     }
     
-    func updateCustomChromaFilter(_ colour: (Float, Float, Float), _ threshold:Float){
-        print("🎨 Chroma Updated \(colour.0),\(colour.1),\(colour.2)")
+    func updateCustomChromaFilter(_ colour: (Float, Float, Float)?, _ threshold:Float?){
         if self.chromaFilter == nil {
-           chromaFilter = customChromaKeyFilter(colour: colour, threshold: threshold) as? CustomChromaFilter
+           chromaFilter = CustomChromaFilter()
         }
-        self.chromaFilter?.red   = colour.0
-        self.chromaFilter?.green = colour.1
-        self.chromaFilter?.blue  = colour.2
-        self.chromaFilter?.threshold = threshold
+        if let colour = colour {
+            self.chromaFilter?.red   = colour.0
+            self.chromaFilter?.green = colour.1
+            self.chromaFilter?.blue  = colour.2
+        }
+        if let threshold = threshold {
+            self.chromaFilter?.threshold = threshold
+        }
     }
     
     func updateMaskBounds(_ bounds:MaskBounds){
         print("🍎 Mask Bounds Updated \(bounds)")
     }
-    
-    func customChromaKeyFilter(colour: (Float, Float, Float), threshold:Float) -> CIFilter? {
-        let filter = CustomChromaFilter()
-        filter.red = colour.0
-        filter.green = colour.1
-        filter.blue = colour.2
-        filter.threshold = threshold
-        return filter
-    }
-    
+ 
     //MARK: - Objc API
     
     @objc

@@ -22,11 +22,10 @@ enum FilterParamNames: String {
 @objc
 public class FilterParameters: NSObject {
     
-    var chromaKeyRange:HueRange?
-    var maskColor:(Float, Float, Float)?
     var backgroundImage:String?
-    var maskBounds:MaskBounds?
+    var maskColor:(Float, Float, Float)?
     var threshold:Float?
+    var maskBounds:MaskBounds?
 
     @objc
     //Convenience for initialising default
@@ -36,14 +35,12 @@ public class FilterParameters: NSObject {
     
     @objc
     public init(backgroundImage:String = "",
-                hueLow:Double = 0.2, hueHigh:Double = 0.65,
                 red:Float = 0.0, green:Float = 1.0, blue:Float = 0.0,
                 threshold:Float = 0.4,
                 maskVertex1: CGPoint,
                 maskVertex2: CGPoint,
                 maskVertex3: CGPoint,
                 maskVertex4: CGPoint){
-        self.chromaKeyRange  = (hueLow, hueHigh)
         self.maskColor = (red, green, blue)
         self.backgroundImage = backgroundImage
         self.maskBounds = [maskVertex1, maskVertex2, maskVertex3, maskVertex4]
@@ -55,16 +52,11 @@ public class FilterParameters: NSObject {
         if let filename = dictionary[FilterParamNames.backgroundPath.rawValue] as? String {
             backgroundImage = filename
         }
-        if let hueRange = dictionary[FilterParamNames.hueRange.rawValue] as? [NSNumber],
-           let low  = hueRange[0] as? Double,
-           let high = hueRange[1] as? Double {
-                self.chromaKeyRange = (low, high)
-       }
        if let colours = dictionary[FilterParamNames.colour.rawValue] as? [NSNumber],
           let red     = colours[0] as? Float,
           let green   = colours[1] as? Float,
           let blue    = colours[2] as? Float {
-           self.maskColor = (red, green, blue)
+          self.maskColor = (red/255.0, green/255.0, blue/255.0)
         }
        if let sensitivity = dictionary[FilterParamNames.sensitivity.rawValue] as? NSNumber,
           let threshold = sensitivity as? Float {
