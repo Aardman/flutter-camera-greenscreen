@@ -25,14 +25,15 @@ public class FilterPipeline : NSObject {
              updateChangedFilters(newValue)
              //copy any new values
              if newValue?.backgroundImage == nil { newValue?.backgroundImage = filterParameters?.backgroundImage }
-             if newValue?.chromaKeyRange  == nil { newValue?.chromaKeyRange = filterParameters?.chromaKeyRange }
+             if newValue?.maskColor       == nil { newValue?.maskColor = filterParameters?.maskColor }
+             if newValue?.threshold       == nil { newValue?.threshold = filterParameters?.threshold }
              if newValue?.maskBounds      == nil { newValue?.maskBounds = filterParameters?.maskBounds }
          }
     }
      
     var backgroundCIImage:CIImage?
     var scaledBackgroundCIImage:CIImage?
-    var chromaFilter:CIFilter?
+    var chromaFilter:CustomChromaFilter?
     let compositor = CIFilter(name:"CISourceOverCompositing")
     
     
@@ -67,13 +68,16 @@ public class FilterPipeline : NSObject {
     
     //MARK:  - Filter init and update
   
+    ///for any non-nil data in the new set of parameters, update the
+    ///filter parameters which may involve re-creating one or more CIFilters
     func updateChangedFilters(_ newValue:FilterParameters?){
         guard let newParams = newValue else { return }
         if let backgroundFilename = newParams.backgroundImage {
             updateBackground(backgroundFilename)
         }
-        if let hueRange = newParams.chromaKeyRange {
-            updateChromaCube(hueRange)
+        if let colour = newParams.maskColor,
+           let threshold = newParams.threshold {
+            updateCustomChromaFilter(colour, threshold)
         }
         if let maskBounds = newParams.maskBounds {
             updateMaskBounds(maskBounds)
@@ -85,27 +89,30 @@ public class FilterPipeline : NSObject {
         if let backgroundImage = UIImage(contentsOfFile:  path) {
             backgroundCIImage = CIImage(image: backgroundImage)
         }
-        //else load demo asset if available
-//        else {
-//            if let backgroundImage = UIImage(named: "demo_background") {
-//                backgroundCIImage = CIImage(image:backgroundImage)
-//            }
-//        }
     }
     
-    func updateChromaCube(_ hueRange:HueRange){
-        print("🎨 Chroma Updated \(hueRange)")
-        chromaFilter = chromaKeyFilter(range: hueRange)
+    func updateCustomChromaFilter(_ colour: (Float, Float, Float), _ threshold:Float){
+        print("🎨 Chroma Updated \(colour.0),\(colour.1),\(colour.2)")
+        if self.chromaFilter == nil {
+           chromaFilter = customChromaKeyFilter(colour: colour, threshold: threshold) as? CustomChromaFilter
+        }
+        self.chromaFilter?.red   = colour.0
+        self.chromaFilter?.green = colour.1
+        self.chromaFilter?.blue  = colour.2
+        self.chromaFilter?.threshold = threshold
     }
     
     func updateMaskBounds(_ bounds:MaskBounds){
         print("🍎 Mask Bounds Updated \(bounds)")
     }
     
-    func chromaKeyFilter(range: HueRange) -> CIFilter? {
-        CIFilter(name: "CIColorCube",
-                 parameters: ["inputCubeDimension": FilterConstants.cubeSize,
-                              "inputCubeData": ChromaCubeFactory().chromaCubeData(fromHue: range.0, toHue: range.1)])
+    func customChromaKeyFilter(colour: (Float, Float, Float), threshold:Float) -> CIFilter? {
+        let filter = CustomChromaFilter()
+        filter.red = colour.0
+        filter.green = colour.1
+        filter.blue = colour.2
+        filter.threshold = threshold
+        return filter
     }
     
     //MARK: - Objc API

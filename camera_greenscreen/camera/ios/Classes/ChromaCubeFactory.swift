@@ -7,10 +7,6 @@
 
 import UIKit
  
-enum FilterConstants  {
-    public static let cubeSize:Int  = 64
-    public static let defaultOrientationPortraitUp:UInt32 = 6
-}
 
 struct ChromaCubeFactory {
       
