@@ -45,7 +45,16 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
-    config.build_settings['Other Metal Compiler Flags'] = '-fcikernel'
-    config.build_settings['MTLLINKER_FLAGS'] = '-cikernel'
+    #This will not work as build rules are required to identify inut .air file from -fcikernel compilation
+    #instead, pre-compile the shaders offline and add to the project and podspec as a Resource
+    #using metal tool to compile metal source into air file.
+    #xcrun -sdk iphoneos metal -c -target air64-apple-ios12.0 AAPLShaders.metal
+    #using metallib tool to assemble air files into metallib file.
+    #xcrun -sdk iphoneos metallib AAPLShaders.air -o AAPLShaders.metallib
+    #
+    #target.build_configurations.each do |config|
+    # config.build_settings['Other Metal Compiler Flags'] = '-fcikernel'
+    # config.build_settings['MTLLINKER_FLAGS'] = '-cikernel'
+    # end
   end
 end
