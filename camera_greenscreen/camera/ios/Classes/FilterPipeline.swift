@@ -115,6 +115,8 @@ public class FilterPipeline : NSObject {
         if let threshold = threshold {
             self.chromaFilter?.threshold = threshold
         }
+        ///needed so that kernel data can be found  when  loaded
+        CustomChromaFilter.myBundle = Bundle(for: type(of: self))
     }
     
     func updateMaskBounds(_ bounds:MaskBounds){
@@ -180,7 +182,8 @@ public class FilterPipeline : NSObject {
         guard let chromaFilter = self.chromaFilter else {  return camImage }
 
         //Chroma
-        chromaFilter.setValue(camImage, forKey: kCIInputImageKey)
+        chromaFilter.inputImage = camImage
+        // chromaFilter.setValue(camImage, forKey: kCIInputImageKey)
 
         //Apply and composite with the background image
         guard let photoWithChromaColourRemoved = chromaFilter.outputImage else { return camImage }

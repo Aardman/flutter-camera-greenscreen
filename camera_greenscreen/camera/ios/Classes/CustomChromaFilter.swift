@@ -7,6 +7,7 @@
 
 import Foundation
 
+
 /// CustomChromaFIlter replaces instances of the input colour using red,green,blue values
 /// with the transparent colour.  Threshold affects sensitivity and  smoothing provides a gradation
 /// in the effect at the edge of a colour transition to transparent.
@@ -20,11 +21,12 @@ class CustomChromaFilter: CIFilter {
     var blue:Float = 0.0
     var threshold:Float = 0.4
     var smoothing:Float = 0.1
-
+    static var myBundle:Bundle?
+      
     static var kernel: CIColorKernel = { () -> CIColorKernel in
-        
-        guard let url = Bundle.main.url(
-          forResource: "default",
+            
+        guard let url = myBundle?.url(
+          forResource: "ChromaShader",
           withExtension: "metallib"),
           let data = try? Data(contentsOf: url) else {
           fatalError("Unable to load metallib")
