@@ -18,6 +18,7 @@ public final class FilterParameters {
 
     float  []  replacementColour = {0.0f, 1.0f, 0.0f} ;
     String   backgroundImage = null;
+    float  sensitivity = 0.4f;
 
     public FilterParameters(){}
 
@@ -25,6 +26,10 @@ public final class FilterParameters {
          ArrayList<Double> colourDoubles = (ArrayList<Double>) arguments.get("colour");
          if(colourDoubles != null){
              setReplacementColour(colourDoubles);
+         }
+         Float thresholdSensitivity = (Float) arguments.get("sensitivity");
+         if (thresholdSensitivity != null){
+             sensitivity = thresholdSensitivity.floatValue();
          }
          String backgroundImagePath = (String) arguments.get("backgroundPath");
          if(backgroundImagePath != null){
@@ -34,6 +39,10 @@ public final class FilterParameters {
 
      public float[] getColorToReplace(){
          return replacementColour;
+     }
+
+     public float getSensitivity(){
+        return sensitivity;
      }
 
      public void setReplacementColour(ArrayList<Double> colours){

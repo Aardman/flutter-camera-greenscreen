@@ -197,12 +197,17 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
      * Update parameters
      */
 
-    public void updateParameters(final FilterParameters parameters) {
+    public void updateParameters(final FilterParameters parameters, final Runnable completion) {
 
         //Set simple parameters if there is a glFilter available
         if (glFilter != null && parameters.replacementColour != null) {
             float[] colour = parameters.getColorToReplace();
             glFilter.setColorToReplace(colour[0], colour[1], colour[2]);
+        }
+
+        //Set simple parameters if there is a glFilter available
+        if (glFilter != null) {
+            glFilter.setThresholdSensitivity(parameters.getSensitivity());
         }
 
         /**
