@@ -197,7 +197,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
      * Update parameters
      */
 
-    public void updateParameters(final FilterParameters parameters, final Runnable completion) {
+    public void updateParameters(final FilterParameters parameters) {
 
         //Set simple parameters if there is a glFilter available
         if (glFilter != null && parameters.replacementColour != null) {
