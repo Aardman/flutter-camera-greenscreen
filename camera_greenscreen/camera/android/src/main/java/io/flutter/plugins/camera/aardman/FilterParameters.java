@@ -27,9 +27,9 @@ public final class FilterParameters {
          if(colourDoubles != null){
              setReplacementColour(colourDoubles);
          }
-         Float thresholdSensitivity = (Float) arguments.get("sensitivity");
+         Double thresholdSensitivity = (Double) arguments.get("sensitivity");
          if (thresholdSensitivity != null){
-             sensitivity = thresholdSensitivity.floatValue();
+             sensitivity =  thresholdSensitivity.floatValue();
          }
          String backgroundImagePath = (String) arguments.get("backgroundPath");
          if(backgroundImagePath != null){
