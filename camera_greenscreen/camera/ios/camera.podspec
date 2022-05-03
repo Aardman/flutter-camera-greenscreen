@@ -18,7 +18,7 @@ A Flutter plugin to use the camera from your Flutter app.
   s.public_header_files = 'Classes/**/*.h'
   s.module_map = 'Classes/CameraPlugin.modulemap'
   s.dependency 'Flutter'
-  s.resources = "Resources/ChromaShader.metallib"
+  s.resources = 'Resources/ChromaBlendShader.metallib'
 
   s.platform = :ios, '11.0'
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'VALID_ARCHS[sdk=iphonesimulator*]' => 'x86_64' }

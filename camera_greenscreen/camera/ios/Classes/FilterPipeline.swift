@@ -33,8 +33,7 @@ public class FilterPipeline : NSObject {
      
     var backgroundCIImage:CIImage?
     var scaledBackgroundCIImage:CIImage?
-    var chromaFilter:CustomChromaFilter?
-    let compositor = CIFilter(name:"CISourceOverCompositing")
+    var chromaFilter:BlendingChromaFilter?
     
     
     //MARK: - Initialise pipeline
@@ -105,7 +104,7 @@ public class FilterPipeline : NSObject {
     
     func updateCustomChromaFilter(_ colour: (Float, Float, Float)?, _ threshold:Float?){
         if self.chromaFilter == nil {
-           chromaFilter = CustomChromaFilter()
+           chromaFilter = BlendingChromaFilter()
         }
         if let colour = colour {
             self.chromaFilter?.red   = colour.0
@@ -116,7 +115,7 @@ public class FilterPipeline : NSObject {
             self.chromaFilter?.threshold = threshold
         }
         ///needed so that kernel data can be found  when  loaded
-        CustomChromaFilter.myBundle = Bundle(for: type(of: self))
+        BlendingChromaFilter.myBundle = Bundle(for: type(of: self))
     }
     
     func updateMaskBounds(_ bounds:MaskBounds){
@@ -173,26 +172,22 @@ public class FilterPipeline : NSObject {
     func applyFilters(inputImage camImage: CIImage) -> CIImage? {
          
         if scaledBackgroundCIImage == nil {
-          //Test background when there is no background image available
-          let colourGen = CIFilter(name: "CIConstantColorGenerator")
-          colourGen?.setValue(CIColor(red: 1.0, green: 0.0, blue: 0.0), forKey: "inputColor")
-          scaledBackgroundCIImage = colourGen?.outputImage
+            //Test background when there is no background image available
+             let colourGen = CIFilter(name: "CIConstantColorGenerator")
+             colourGen?.setValue(CIColor(red: 1.0, green: 0.0, blue: 0.0), forKey: "inputColor")
+             scaledBackgroundCIImage = colourGen?.outputImage
         }
           
-        guard let chromaFilter = self.chromaFilter else {  return camImage }
+        guard let chromaFilter = self.chromaFilter else { return camImage }
 
         //Chroma
-        chromaFilter.inputImage = camImage
-        // chromaFilter.setValue(camImage, forKey: kCIInputImageKey)
+        chromaFilter.cameraImage = camImage
+        chromaFilter.backgroundImage = scaledBackgroundCIImage
 
         //Apply and composite with the background image
-        guard let photoWithChromaColourRemoved = chromaFilter.outputImage else { return camImage }
-        compositor?.setValue(photoWithChromaColourRemoved, forKey: kCIInputImageKey)
-        compositor?.setValue(scaledBackgroundCIImage, forKey: kCIInputBackgroundImageKey)
-        
-        guard let compositedCIImage = compositor?.outputImage   else { return nil }
+        guard let chromaBlendedImage = chromaFilter.outputImage else { return camImage }
  
-        return compositedCIImage
+        return chromaBlendedImage
     }
       
     

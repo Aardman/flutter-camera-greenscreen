@@ -58,9 +58,8 @@ public class FilterParameters: NSObject {
           let blue    = colours[2] as? Float {
           self.maskColor = (red/255.0, green/255.0, blue/255.0)
         }
-       if let sensitivity = dictionary[FilterParamNames.sensitivity.rawValue] as? NSNumber,
-          let threshold = sensitivity as? Float {
-             self.threshold = threshold
+       if let sensitivity = dictionary[FilterParamNames.sensitivity.rawValue] as? NSNumber {
+           self.threshold = sensitivity.floatValue
        }
        if let vectorBounds = dictionary[FilterParamNames.polygon.rawValue] as? [[NSNumber]],
           let point1 = CGPoint(polygonPoint:vectorBounds[0]),

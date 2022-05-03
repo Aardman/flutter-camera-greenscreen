@@ -672,7 +672,7 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
 
     var colours = sampleToggle ? [0.0, 255.0, 0.0] : [0.0, 0.0, 255.0];
 
-    var sensitivity = sampleToggle ? 0.3 : 0.8;
+    var sensitivity = sampleToggle ? 0.1 : 0.425;
 
     var data = {
       "backgroundPath": fullPath,
