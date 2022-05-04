@@ -55,6 +55,19 @@ public final class FilterParameters {
         }
      }
 
+     public void updateWith(FilterParameters newParameters) {
+        if (newParameters.backgroundImage != null){
+            backgroundImage = newParameters.backgroundImage;
+        }
+        if (newParameters.replacementColour != null){
+            replacementColour = newParameters.replacementColour;
+        }
+        if (newParameters.getSensitivity() != Constants.FLOAT_NOT_SET) {
+            sensitivity = newParameters.sensitivity;
+        }
+     }
+
+
 
 }
 
