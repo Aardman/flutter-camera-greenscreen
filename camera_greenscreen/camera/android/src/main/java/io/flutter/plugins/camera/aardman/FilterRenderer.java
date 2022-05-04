@@ -199,15 +199,17 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
 
     public void updateParameters(final FilterParameters parameters) {
 
+        previewFilterParameters.updateWith(parameters);
+
         //Set simple parameters if there is a glFilter available
-        if (glFilter != null && parameters.replacementColour != null) {
-            float[] colour = parameters.getColorToReplace();
+        if (glFilter != null && previewFilterParameters.replacementColour != null) {
+            float[] colour = previewFilterParameters.getColorToReplace();
             glFilter.setColorToReplace(colour[0], colour[1], colour[2]);
         }
 
         //Set simple parameters if there is a glFilter available
-        if (glFilter != null && parameters.getSensitivity()!= Constants.FLOAT_NOT_SET) {
-            glFilter.setThresholdSensitivity(parameters.getSensitivity());
+        if (glFilter != null && previewFilterParameters.getSensitivity()!= Constants.FLOAT_NOT_SET) {
+            glFilter.setThresholdSensitivity(previewFilterParameters.getSensitivity());
         }
 
         /**
@@ -215,24 +217,23 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
          */
         if (glFilter == null) {
             appendToTaskQueue( ()->{
-                setupChromaFilter(parameters);
+                setupChromaFilter(previewFilterParameters);
             }, openGLTaskQueue);
         }
         //filter needs to be initially set if parameters were set without a background before
         else if (glFilter != null && glFilter.getBitmap() == null) {
             CustomFilterFactory.setChromaBackground(glFilter,
                     new Size(outputWidth, outputHeight),
-                    parameters,
+                    previewFilterParameters,
                     textureIsLandscape);
         }
         //filter needs replacing
-        else if (glFilter != null && parameters.backgroundImage != null){
+        else if (glFilter != null && previewFilterParameters.backgroundImage != null){
             appendToTaskQueue(()->{
-                restartChromaFilter(parameters);
+                restartChromaFilter(previewFilterParameters);
             }, openGLTaskQueue);
         }
 
-        this.previewFilterParameters = parameters;
     }
 
     /**
