@@ -206,7 +206,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
         }
 
         //Set simple parameters if there is a glFilter available
-        if (glFilter != null) {
+        if (glFilter != null && parameters.getSensitivity()!= Constants.FLOAT_NOT_SET) {
             glFilter.setThresholdSensitivity(parameters.getSensitivity());
         }
 
@@ -253,12 +253,11 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
      */
     void restartChromaFilter(FilterParameters parameters){
 
-        if (glFilterIsEnabled) {
-            needsToRestoreEnabledFilterAfterRebuild = true;
-            disableFilter();
-        }
-
         synchronized (glFilter){
+            if (glFilterIsEnabled) {
+                 needsToRestoreEnabledFilterAfterRebuild = true;
+                 disableFilter();
+             }
             glFilter.destroy();
             glFilter.notify();
         }

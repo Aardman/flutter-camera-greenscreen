@@ -23,6 +23,9 @@ public class CustomFilterFactory {
         GPUImageChromaKeyBlendFilter chromaFilter = new GPUImageChromaKeyBlendFilter();
 
         float[] colour = parameters.getColorToReplace();
+        if (colour == null) {
+            colour = Constants.DEFAULT_COLOUR; //defaults to green if not set
+        }
         chromaFilter.setColorToReplace(colour[0], colour[1], colour[2]);
         return chromaFilter;
     }

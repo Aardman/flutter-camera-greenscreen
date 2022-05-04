@@ -16,9 +16,9 @@ import java.util.logging.Filter;
 
 public final class FilterParameters {
 
-    float  []  replacementColour = {0.0f, 1.0f, 0.0f} ;
+    float  []  replacementColour = null ;
     String   backgroundImage = null;
-    float  sensitivity = 0.4f;
+    float  sensitivity = Constants.FLOAT_NOT_SET;
 
     public FilterParameters(){}
 
