@@ -73,6 +73,8 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
   PermissionStatus? _permissionStatus;
 
   bool sampleToggle = true;
+  double _backgroundSensitivity = 0.5;
+  double get backgroundSensitivity => _backgroundSensitivity;
 
   // Counting pointers (number of user fingers on screen)
   int _pointers = 0;
@@ -558,38 +560,6 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
               ? onTakePictureButtonPressed
               : null,
         ),
-        // IconButton(
-        //   icon: const Icon(Icons.videocam),
-        //   color: Colors.blue,
-        //   onPressed: cameraController != null &&
-        //           cameraController.value.isInitialized &&
-        //           !cameraController.value.isRecordingVideo
-        //       ? onVideoRecordButtonPressed
-        //       : null,
-        // ),
-        // IconButton(
-        //   icon: cameraController != null &&
-        //           cameraController.value.isRecordingPaused
-        //       ? const Icon(Icons.play_arrow)
-        //       : const Icon(Icons.pause),
-        //   color: Colors.blue,
-        //   onPressed: cameraController != null &&
-        //           cameraController.value.isInitialized &&
-        //           cameraController.value.isRecordingVideo
-        //       ? (cameraController.value.isRecordingPaused)
-        //           ? onResumeButtonPressed
-        //           : onPauseButtonPressed
-        //       : null,
-        // ),
-        // IconButton(
-        //   icon: const Icon(Icons.stop),
-        //   color: Colors.red,
-        //   onPressed: cameraController != null &&
-        //           cameraController.value.isInitialized &&
-        //           cameraController.value.isRecordingVideo
-        //       ? onStopButtonPressed
-        //       : null,
-        // ),
         IconButton(
             icon: const Icon(Icons.pause_presentation),
             color: cameraController != null &&
@@ -697,6 +667,36 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
         buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes));
   }
 
+  void onChangeSensitivitySlider(double value) {
+    _backgroundSensitivity = value;
+  }
+
+  void setNewSensitivity(double value) {
+    backgroundSensitivityFinishDrag(value);
+  }
+
+  void backgroundSensitivityFinishDrag(double value) {
+    _backgroundSensitivity = value;
+    updateSensitivityFilter(value);
+  }
+
+  Future<void> updateSensitivityFilter(value) async {
+    final CameraController? cameraController = controller;
+
+    if (cameraController == null || !cameraController.value.isInitialized) {
+      showInSnackBar('Error: select a camera first.');
+      return;
+    }
+
+    var data = {"sensitivity": value};
+
+    await cameraController.updateFilters(data);
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   /// Display a row of toggle to select the camera (or a message if no camera is available).
   Widget _cameraTogglesRowWidget() {
     final List<Widget> toggles = <Widget>[];
@@ -730,6 +730,18 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
         );
       }
     }
+
+    toggles.add(
+      Transform.scale(
+          scale: 1.2,
+          child: Slider(
+              value: backgroundSensitivity,
+              onChanged: onChangeSensitivitySlider,
+              onChangeEnd: setNewSensitivity,
+              activeColor: Colors.grey[400],
+              inactiveColor: Colors.grey[300],
+              thumbColor: Colors.grey[000])),
+    );
 
     return Row(children: toggles);
   }

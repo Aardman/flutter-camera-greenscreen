@@ -208,13 +208,16 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
         }
 
         //Set simple parameters if there is a glFilter available
-        if (glFilter != null && previewFilterParameters.getSensitivity()!= Constants.FLOAT_NOT_SET) {
+        if (glFilter != null && previewFilterParameters.getSensitivity() != Constants.FLOAT_NOT_SET) {
             glFilter.setThresholdSensitivity(previewFilterParameters.getSensitivity());
         }
 
         /**
          * Setting the main filter background
          */
+
+        boolean backgroundWasChanged = parameters.backgroundImage != null;
+
         if (glFilter == null) {
             appendToTaskQueue( ()->{
                 setupChromaFilter(previewFilterParameters);
@@ -228,7 +231,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
                     textureIsLandscape);
         }
         //filter needs replacing
-        else if (glFilter != null && previewFilterParameters.backgroundImage != null){
+        else if (glFilter != null && backgroundWasChanged){
             appendToTaskQueue(()->{
                 restartChromaFilter(previewFilterParameters);
             }, openGLTaskQueue);
