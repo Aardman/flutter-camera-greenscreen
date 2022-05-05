@@ -1013,7 +1013,7 @@ public class Camera
   }
 
   /**
-   * Shortut to get deviceOrientationListener.
+   * Shortcut to get deviceOrientationListener.
    */
   DeviceOrientationManager getDeviceOrientationManager() {
     return cameraFeatures.getSensorOrientation().getDeviceOrientationManager();
