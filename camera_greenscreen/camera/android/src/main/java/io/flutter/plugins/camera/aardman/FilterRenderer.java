@@ -215,7 +215,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
         /**
          * Setting the main filter background
          */
-
         boolean backgroundWasChanged = parameters.backgroundImage != null;
 
         if (glFilter == null) {
@@ -278,6 +277,19 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
 
     void setupChromaFilter(FilterParameters parameters){
         GPUImageChromaKeyBlendFilter filter = CustomFilterFactory.getCustomFilter(parameters);
+
+        //Set initial colour and sensitivity
+        //Set simple parameters if there is a glFilter available
+        if (filter != null && parameters.replacementColour != null) {
+            float[] colour = parameters.getColorToReplace();
+            filter.setColorToReplace(colour[0], colour[1], colour[2]);
+        }
+
+        //Set simple parameters if there is a glFilter available
+        if (filter != null && parameters.getSensitivity() != Constants.FLOAT_NOT_SET) {
+            filter.setThresholdSensitivity(parameters.getSensitivity());
+        }
+
         /**
          * Will add a coloured background if none is supplied as an indication of error condition
          */
