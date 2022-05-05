@@ -73,7 +73,7 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
   PermissionStatus? _permissionStatus;
 
   bool sampleToggle = true;
-  double _backgroundSensitivity = 0.25;
+  double _backgroundSensitivity = 0.45;
   double get backgroundSensitivity => _backgroundSensitivity;
 
   // Counting pointers (number of user fingers on screen)
@@ -629,7 +629,8 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
       return;
     }
 
-    File tempFileForChroma = await getImageFileFromAssets("assets/backgrounds/bkgd_01.jpg"); 
+    File tempFileForChroma =
+        await getImageFileFromAssets("assets/backgrounds/bkgd_01.jpg");
     String? fullPath = tempFileForChroma.path;
 
     var data = {
@@ -756,17 +757,17 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
       }
     }
 
-    toggles.add(
-      Transform.scale(
-          scale: 1.2,
-          child: Slider(
-              value: backgroundSensitivity,
-              onChanged: onChangeSensitivitySlider,
-              onChangeEnd: setNewSensitivity,
-              activeColor: Colors.grey[400],
-              inactiveColor: Colors.grey[300],
-              thumbColor: Colors.grey[000])),
-    );
+    // toggles.add(
+    //   Transform.scale(
+    //       scale: 1.2,
+    //       child: Slider(
+    //           value: backgroundSensitivity,
+    //           onChanged: onChangeSensitivitySlider,
+    //           onChangeEnd: setNewSensitivity,
+    //           activeColor: Colors.grey[400],
+    //           inactiveColor: Colors.grey[300],
+    //           thumbColor: Colors.grey[000])),
+    // );
 
     return Row(children: toggles);
   }
