@@ -73,7 +73,7 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
   PermissionStatus? _permissionStatus;
 
   bool sampleToggle = true;
-  double _backgroundSensitivity = 0.5;
+  double _backgroundSensitivity = 0.25;
   double get backgroundSensitivity => _backgroundSensitivity;
 
   // Counting pointers (number of user fingers on screen)
@@ -621,6 +621,31 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
 
 //Aardman-animator - basic demonstration of API for sending filter data
 
+  Future<void> setInitialFilterParameters() async {
+    final CameraController? cameraController = controller;
+
+    if (cameraController == null || !cameraController.value.isInitialized) {
+      showInSnackBar('Error: select a camera first.');
+      return;
+    }
+
+    File tempFileForChroma = await getImageFileFromAssets("assets/backgrounds/bkgd_01.jpg"); 
+    String? fullPath = tempFileForChroma.path;
+
+    var data = {
+      "isInitialising": true,
+      "backgroundPath": fullPath,
+      "colour": [0.0, 255.0, 0.0],
+      "sensitivity": _backgroundSensitivity
+    };
+
+    await cameraController.updateFilters(data);
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   Future<void> onUpdateFiltersPressed() async {
     final CameraController? cameraController = controller;
 
@@ -642,7 +667,7 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
 
     var colours = sampleToggle ? [0.0, 255.0, 0.0] : [0.0, 0.0, 255.0];
 
-    var sensitivity = sampleToggle ? 0.1 : 0.425;
+    var sensitivity = _backgroundSensitivity;
 
     var data = {
       "backgroundPath": fullPath,
@@ -795,6 +820,11 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
 
     try {
       await cameraController.initialize();
+
+      if (cameraController.value.isInitialized) {
+        setInitialFilterParameters();
+      }
+
       await Future.wait(<Future<Object?>>[
         // The exposure mode is currently not supported on the web.
         ...!kIsWeb
