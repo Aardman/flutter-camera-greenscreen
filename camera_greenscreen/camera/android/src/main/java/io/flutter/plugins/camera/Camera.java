@@ -1152,11 +1152,12 @@ public class Camera
    * @param onSuccessCallback - null in Flutter plugin implementation
    * @throws CameraAccessException
    */
+  @RequiresApi(api = VERSION_CODES.N)
   public void startCaptureWithFiltering(FilterPipelineController filterPipelineController,
-                                           FilterCameraConfigurations filterCameraConfigurations,
-                                           @Nullable Runnable onSuccessCallback,
-                                           DartMessenger messenger,
-                                           Surface stillPictureImageReaderSurface)
+                                        FilterCameraConfigurations filterCameraConfigurations,
+                                        @Nullable Runnable onSuccessCallback,
+                                        DartMessenger messenger,
+                                        Surface stillPictureImageReaderSurface)
           throws CameraAccessException {
 
     assert(filterPipelineController != null);
@@ -1191,9 +1192,11 @@ public class Camera
 
     if (VERSION.SDK_INT >= VERSION_CODES.P) {
        startFilteredCaptureSession(filterCameraConfigurations.cameraDeviceDriver, captureSurface, stillPictureImageReaderSurface, captureStateCallback);
-    } else {
-      Log.i(TAG, "Failed to start filtered capture for legacy android platforms - not implemented");
-      // startSessionForLegacyVersions();
+    } else if (VERSION.SDK_INT >= VERSION_CODES.N && VERSION.SDK_INT < VERSION_CODES.P) {
+       startFilteredCaptureSessionN(stillPictureImageReaderSurface, captureSurface, captureStateCallback);
+    }
+    else {
+       Log.i(TAG, "Failed to start filtered capture for legacy android platforms before Nougat 7 (N) - not implemented");
     }
   }
 
@@ -1214,8 +1217,17 @@ public class Camera
     cameraDevice.createCaptureSession(sessionConfiguration);
   }
 
+  @RequiresApi(api = VERSION_CODES.N)
+  private void startFilteredCaptureSessionN(Surface stillPictureImageReaderSurface,
+                                            Surface captureSurface,
+                                            CameraCaptureSession.StateCallback captureStateCallback) throws CameraAccessException {
+    List<Surface> surfaceList = new ArrayList<>();
+    surfaceList.add(captureSurface);
+    surfaceList.add(stillPictureImageReaderSurface);
+    cameraDevice.createCaptureSession(surfaceList, captureStateCallback, backgroundHandler);
+  }
 
-  void configurePreviewRequestBuilderForFilteredCapture(Surface captureSurface,
+ void configurePreviewRequestBuilderForFilteredCapture(Surface captureSurface,
                                                         Surface stillPictureImageReaderSurface,
                                                         FilterCameraConfigurations configurations) throws CameraAccessException {
 
