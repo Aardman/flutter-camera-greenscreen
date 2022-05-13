@@ -202,8 +202,8 @@ public class FilterPipelineController {
     }
 
     public void updateParameters(FilterParameters parameters){
-        this.currentFilterParameters = parameters;
-        filterRenderer.updateParameters(parameters);
+        this.currentFilterParameters.updateWith(parameters);
+        filterRenderer.updateParameters(this.currentFilterParameters);
     }
 
 
