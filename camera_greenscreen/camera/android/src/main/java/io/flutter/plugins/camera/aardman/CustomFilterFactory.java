@@ -27,6 +27,11 @@ public class CustomFilterFactory {
             colour = Constants.DEFAULT_COLOUR; //defaults to green if not set
         }
         chromaFilter.setColorToReplace(colour[0], colour[1], colour[2]);
+
+        if (parameters.getSensitivity() != Constants.FLOAT_NOT_SET) {
+            chromaFilter.setThresholdSensitivity(parameters.getSensitivity());
+        }
+
         return chromaFilter;
     }
 
