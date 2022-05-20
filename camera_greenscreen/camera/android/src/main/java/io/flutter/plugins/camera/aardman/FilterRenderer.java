@@ -197,7 +197,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
      * Update parameters
      */
 
-    public void updateParameters(final FilterParameters parameters) {
+    public void updateParameters(final FilterParameters parameters, boolean backgroundWasChanged) {
 
         previewFilterParameters = parameters;
 
@@ -215,7 +215,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
         /**
          * Setting the main filter background
          */
-        boolean backgroundWasChanged = parameters.backgroundImage != null;
 
         if (glFilter == null) {
             appendToTaskQueue( ()->{
