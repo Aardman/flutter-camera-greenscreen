@@ -197,9 +197,7 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
      * Update parameters
      */
 
-    public void updateParameters(final FilterParameters parameters, boolean backgroundWasChanged) {
-
-        previewFilterParameters = parameters;
+    public void updateParameters(boolean backgroundWasChanged) {
 
         //Set simple parameters if there is a glFilter available
         if (glFilter != null && previewFilterParameters.replacementColour != null) {
@@ -215,7 +213,6 @@ public class FilterRenderer implements PreviewFrameHandler,  GLWorker {
         /**
          * Setting the main filter background
          */
-
         if (glFilter == null) {
             appendToTaskQueue( ()->{
                 setupChromaFilter(previewFilterParameters);

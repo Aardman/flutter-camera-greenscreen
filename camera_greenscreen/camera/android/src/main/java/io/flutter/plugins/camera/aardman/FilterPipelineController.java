@@ -204,7 +204,7 @@ public class FilterPipelineController {
     public void updateParameters(FilterParameters parameters){
         boolean backgroundWasChanged = parameters.backgroundImage != null;
         this.currentFilterParameters.updateWith(parameters);
-        filterRenderer.updateParameters(this.currentFilterParameters, backgroundWasChanged);
+        filterRenderer.updateParameters(backgroundWasChanged);
     }
 
 
