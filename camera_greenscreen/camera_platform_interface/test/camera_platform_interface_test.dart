@@ -18,7 +18,14 @@ void main() {
     test('Cannot be implemented with `implements`', () {
       expect(() {
         CameraPlatform.instance = ImplementsCameraPlatform();
-      }, throwsNoSuchMethodError);
+        // In versions of `package:plugin_platform_interface` prior to fixing
+        // https://github.com/flutter/flutter/issues/109339, an attempt to
+        // implement a platform interface using `implements` would sometimes
+        // throw a `NoSuchMethodError` and other times throw an
+        // `AssertionError`.  After the issue is fixed, an `AssertionError` will
+        // always be thrown.  For the purpose of this test, we don't really care
+        // what exception is thrown, so just allow any exception.
+      }, throwsA(anything));
     });
 
     test('Can be extended', () {
@@ -433,6 +440,52 @@ void main() {
         () => cameraPlatform.resumePreview(1),
         throwsUnimplementedError,
       );
+    });
+  });
+
+  group('exports', () {
+    test('CameraDescription is exported', () {
+      const CameraDescription(
+          name: 'abc-123',
+          sensorOrientation: 1,
+          lensDirection: CameraLensDirection.external);
+    });
+
+    test('CameraException is exported', () {
+      CameraException('1', 'error');
+    });
+
+    test('CameraImageData is exported', () {
+      const CameraImageData(
+        width: 1,
+        height: 1,
+        format: CameraImageFormat(ImageFormatGroup.bgra8888, raw: 1),
+        planes: <CameraImagePlane>[],
+      );
+    });
+
+    test('ExposureMode is exported', () {
+      // ignore: unnecessary_statements
+      ExposureMode.auto;
+    });
+
+    test('FlashMode is exported', () {
+      // ignore: unnecessary_statements
+      FlashMode.auto;
+    });
+
+    test('FocusMode is exported', () {
+      // ignore: unnecessary_statements
+      FocusMode.auto;
+    });
+
+    test('ResolutionPreset is exported', () {
+      // ignore: unnecessary_statements
+      ResolutionPreset.high;
+    });
+
+    test('VideoCaptureOptions is exported', () {
+      const VideoCaptureOptions(123);
     });
   });
 }

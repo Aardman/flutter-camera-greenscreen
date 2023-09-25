@@ -1,3 +1,69 @@
+## 2.5.2
+
+* Adds pub topics to package metadata.
+* Updates minimum supported SDK version to Flutter 3.7/Dart 2.19.
+
+## 2.5.1
+
+* Removes obsolete null checks on non-nullable values.
+* Updates minimum supported SDK version to Flutter 3.3/Dart 2.18.
+
+## 2.5.0
+
+* Adds NV21 as an image stream format (suitable for Android).
+* Aligns Dart and Flutter SDK constraints.
+
+## 2.4.1
+
+* Updates links for the merge of flutter/plugins into flutter/packages.
+
+## 2.4.0
+
+* Allows camera to be switched while video recording.
+* Updates minimum Flutter version to 3.0.
+
+## 2.3.4
+
+* Updates code for stricter lint checks.
+
+## 2.3.3
+
+* Updates code for stricter lint checks.
+
+## 2.3.2
+
+* Updates MethodChannelCamera to have startVideoRecording call the newer startVideoCapturing.
+
+## 2.3.1
+
+* Exports VideoCaptureOptions to allow dependencies to implement concurrent stream and record.
+
+## 2.3.0
+
+* Adds new capture method for a camera to allow concurrent streaming and recording.
+
+## 2.2.2
+
+* Updates code for `no_leading_underscores_for_local_identifiers` lint.
+
+## 2.2.1
+
+* Updates imports for `prefer_relative_imports`.
+* Updates minimum Flutter version to 2.10.
+* Fixes avoid_redundant_argument_values lint warnings and minor typos.
+* Ignores unnecessary import warnings in preparation for [upcoming Flutter changes](https://github.com/flutter/flutter/pull/104231).
+* Ignores missing return warnings in preparation for [upcoming analysis changes](https://github.com/flutter/flutter/issues/105750).
+
+## 2.2.0
+
+* Adds image streaming to the platform interface.
+* Removes unnecessary imports.
+
+## 2.1.6
+
+* Adopts `Object.hash`.
+* Removes obsolete dependency on `pedantic`.
+
 ## 2.1.5
 
 * Fixes asynchronous exceptions handling of the `initializeCamera` method.

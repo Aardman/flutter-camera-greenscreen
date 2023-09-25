@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:camera_platform_interface/src/types/focus_mode.dart';
 import 'package:flutter/foundation.dart' show immutable;
 
 import '../../camera_platform_interface.dart';
@@ -28,7 +27,7 @@ abstract class CameraEvent {
   /// Build a Camera Event, that relates a `cameraId`.
   ///
   /// The `cameraId` is the ID of the camera that triggered the event.
-  const CameraEvent(this.cameraId) : assert(cameraId != null);
+  const CameraEvent(this.cameraId);
 
   /// The ID of the Camera this event is associated to.
   final int cameraId;
@@ -52,14 +51,14 @@ class CameraInitializedEvent extends CameraEvent {
   /// The `previewWidth` represents the width of the generated preview in pixels.
   /// The `previewHeight` represents the height of the generated preview in pixels.
   const CameraInitializedEvent(
-    int cameraId,
+    super.cameraId,
     this.previewWidth,
     this.previewHeight,
     this.exposureMode,
     this.exposurePointSupported,
     this.focusMode,
     this.focusPointSupported,
-  ) : super(cameraId);
+  );
 
   /// Converts the supplied [Map] to an instance of the [CameraInitializedEvent]
   /// class.
@@ -117,14 +116,15 @@ class CameraInitializedEvent extends CameraEvent {
           focusPointSupported == other.focusPointSupported;
 
   @override
-  int get hashCode =>
-      super.hashCode ^
-      previewWidth.hashCode ^
-      previewHeight.hashCode ^
-      exposureMode.hashCode ^
-      exposurePointSupported.hashCode ^
-      focusMode.hashCode ^
-      focusPointSupported.hashCode;
+  int get hashCode => Object.hash(
+        super.hashCode,
+        previewWidth,
+        previewHeight,
+        exposureMode,
+        exposurePointSupported,
+        focusMode,
+        focusPointSupported,
+      );
 }
 
 /// An event fired when the resolution preset of the camera has changed.
@@ -135,10 +135,10 @@ class CameraResolutionChangedEvent extends CameraEvent {
   /// The `captureWidth` represents the width of the resulting image in pixels.
   /// The `captureHeight` represents the height of the resulting image in pixels.
   const CameraResolutionChangedEvent(
-    int cameraId,
+    super.cameraId,
     this.captureWidth,
     this.captureHeight,
-  ) : super(cameraId);
+  );
 
   /// Converts the supplied [Map] to an instance of the
   /// [CameraResolutionChangedEvent] class.
@@ -171,15 +171,14 @@ class CameraResolutionChangedEvent extends CameraEvent {
           captureHeight == other.captureHeight;
 
   @override
-  int get hashCode =>
-      super.hashCode ^ captureWidth.hashCode ^ captureHeight.hashCode;
+  int get hashCode => Object.hash(super.hashCode, captureWidth, captureHeight);
 }
 
 /// An event fired when the camera is going to close.
 class CameraClosingEvent extends CameraEvent {
   /// Build a CameraClosing event triggered from the camera represented by
   /// `cameraId`.
-  const CameraClosingEvent(int cameraId) : super(cameraId);
+  const CameraClosingEvent(super.cameraId);
 
   /// Converts the supplied [Map] to an instance of the [CameraClosingEvent]
   /// class.
@@ -212,7 +211,7 @@ class CameraErrorEvent extends CameraEvent {
   /// `cameraId`.
   ///
   /// The `description` represents the error occured on the camera.
-  const CameraErrorEvent(int cameraId, this.description) : super(cameraId);
+  const CameraErrorEvent(super.cameraId, this.description);
 
   /// Converts the supplied [Map] to an instance of the [CameraErrorEvent]
   /// class.
@@ -239,7 +238,7 @@ class CameraErrorEvent extends CameraEvent {
           description == other.description;
 
   @override
-  int get hashCode => super.hashCode ^ description.hashCode;
+  int get hashCode => Object.hash(super.hashCode, description);
 }
 
 /// An event fired when a video has finished recording.
@@ -249,8 +248,7 @@ class VideoRecordedEvent extends CameraEvent {
   /// The `file` represents the file of the video.
   /// The `maxVideoDuration` shows if a maxVideoDuration shows if a maximum
   /// video duration was set.
-  const VideoRecordedEvent(int cameraId, this.file, this.maxVideoDuration)
-      : super(cameraId);
+  const VideoRecordedEvent(super.cameraId, this.file, this.maxVideoDuration);
 
   /// Converts the supplied [Map] to an instance of the [VideoRecordedEvent]
   /// class.
@@ -284,6 +282,5 @@ class VideoRecordedEvent extends CameraEvent {
           maxVideoDuration == other.maxVideoDuration;
 
   @override
-  int get hashCode =>
-      super.hashCode ^ file.hashCode ^ maxVideoDuration.hashCode;
+  int get hashCode => Object.hash(super.hashCode, file, maxVideoDuration);
 }

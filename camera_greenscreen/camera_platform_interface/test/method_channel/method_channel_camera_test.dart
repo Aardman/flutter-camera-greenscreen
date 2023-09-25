@@ -7,11 +7,8 @@ import 'dart:math';
 
 import 'package:async/async.dart';
 import 'package:camera_platform_interface/camera_platform_interface.dart';
-import 'package:camera_platform_interface/src/events/device_event.dart';
 import 'package:camera_platform_interface/src/method_channel/method_channel_camera.dart';
-import 'package:camera_platform_interface/src/types/focus_mode.dart';
 import 'package:camera_platform_interface/src/utils/utils.dart';
-import 'package:flutter/services.dart' hide DeviceOrientation;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -487,11 +484,13 @@ void main() {
         ]);
         expect(cameras.length, returnData.length);
         for (int i = 0; i < returnData.length; i++) {
+          final Map<String, Object?> typedData =
+              (returnData[i] as Map<dynamic, dynamic>).cast<String, Object?>();
           final CameraDescription cameraDescription = CameraDescription(
-            name: returnData[i]['name']! as String,
-            lensDirection: parseCameraLensDirection(
-                returnData[i]['lensFacing']! as String),
-            sensorOrientation: returnData[i]['sensorOrientation']! as int,
+            name: typedData['name']! as String,
+            lensDirection:
+                parseCameraLensDirection(typedData['lensFacing']! as String),
+            sensorOrientation: typedData['sensorOrientation']! as int,
           );
           expect(cameras[i], cameraDescription);
         }
@@ -572,7 +571,31 @@ void main() {
           isMethodCall('startVideoRecording', arguments: <String, Object?>{
             'cameraId': cameraId,
             'maxVideoDuration': null,
+            'enableStream': false,
           }),
+        ]);
+      });
+
+      test('Should set description while recording', () async {
+        // Arrange
+        final MethodChannelMock channel = MethodChannelMock(
+          channelName: 'plugins.flutter.io/camera',
+          methods: <String, dynamic>{'setDescriptionWhileRecording': null},
+        );
+
+        // Act
+        const CameraDescription cameraDescription = CameraDescription(
+            name: 'Test',
+            lensDirection: CameraLensDirection.back,
+            sensorOrientation: 0);
+        await camera.setDescriptionWhileRecording(cameraDescription);
+
+        // Assert
+        expect(channel.log, <Matcher>[
+          isMethodCall('setDescriptionWhileRecording',
+              arguments: <String, Object?>{
+                'cameraName': cameraDescription.name
+              }),
         ]);
       });
 
@@ -594,7 +617,8 @@ void main() {
         expect(channel.log, <Matcher>[
           isMethodCall('startVideoRecording', arguments: <String, Object?>{
             'cameraId': cameraId,
-            'maxVideoDuration': 10000
+            'maxVideoDuration': 10000,
+            'enableStream': false,
           }),
         ]);
       });
@@ -957,7 +981,6 @@ void main() {
             'setZoomLevel': PlatformException(
               code: 'ZOOM_ERROR',
               message: 'Illegal zoom error',
-              details: null,
             )
           },
         );
@@ -1039,6 +1062,52 @@ void main() {
         expect(channel.log, <Matcher>[
           isMethodCall('resumePreview',
               arguments: <String, Object?>{'cameraId': cameraId}),
+        ]);
+      });
+
+      test('Should start streaming', () async {
+        // Arrange
+        final MethodChannelMock channel = MethodChannelMock(
+          channelName: 'plugins.flutter.io/camera',
+          methods: <String, dynamic>{
+            'startImageStream': null,
+            'stopImageStream': null,
+          },
+        );
+
+        // Act
+        final StreamSubscription<CameraImageData> subscription = camera
+            .onStreamedFrameAvailable(cameraId)
+            .listen((CameraImageData imageData) {});
+
+        // Assert
+        expect(channel.log, <Matcher>[
+          isMethodCall('startImageStream', arguments: null),
+        ]);
+
+        await subscription.cancel();
+      });
+
+      test('Should stop streaming', () async {
+        // Arrange
+        final MethodChannelMock channel = MethodChannelMock(
+          channelName: 'plugins.flutter.io/camera',
+          methods: <String, dynamic>{
+            'startImageStream': null,
+            'stopImageStream': null,
+          },
+        );
+
+        // Act
+        final StreamSubscription<CameraImageData> subscription = camera
+            .onStreamedFrameAvailable(cameraId)
+            .listen((CameraImageData imageData) {});
+        await subscription.cancel();
+
+        // Assert
+        expect(channel.log, <Matcher>[
+          isMethodCall('startImageStream', arguments: null),
+          isMethodCall('stopImageStream', arguments: null),
         ]);
       });
     });
