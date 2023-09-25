@@ -5,16 +5,12 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:camera_platform_interface/camera_platform_interface.dart';
-import 'package:camera_platform_interface/src/events/device_event.dart';
-import 'package:camera_platform_interface/src/method_channel/method_channel_camera.dart';
-import 'package:camera_platform_interface/src/types/exposure_mode.dart';
-import 'package:camera_platform_interface/src/types/focus_mode.dart';
-import 'package:camera_platform_interface/src/types/image_format_group.dart';
-import 'package:cross_file/cross_file.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+
+import '../../camera_platform_interface.dart';
+import '../method_channel/method_channel_camera.dart';
 
 /// The interface that implementations of camera must implement.
 ///
@@ -135,8 +131,19 @@ abstract class CameraPlatform extends PlatformInterface {
   /// meaning the recording will continue until manually stopped.
   /// With [maxVideoDuration] set the video is returned in a [VideoRecordedEvent]
   /// through the [onVideoRecordedEvent] stream when the set duration is reached.
+  ///
+  /// This method is deprecated in favour of [startVideoCapturing].
   Future<void> startVideoRecording(int cameraId, {Duration? maxVideoDuration}) {
     throw UnimplementedError('startVideoRecording() is not implemented.');
+  }
+
+  /// Starts a video recording and/or streaming session.
+  ///
+  /// Please see [VideoCaptureOptions] for documentation on the
+  /// configuration options.
+  Future<void> startVideoCapturing(VideoCaptureOptions options) {
+    return startVideoRecording(options.cameraId,
+        maxVideoDuration: options.maxDuration);
   }
 
   /// Stops the video recording and returns the file where it was saved.
@@ -152,6 +159,21 @@ abstract class CameraPlatform extends PlatformInterface {
   /// Resume video recording after pausing.
   Future<void> resumeVideoRecording(int cameraId) {
     throw UnimplementedError('resumeVideoRecording() is not implemented.');
+  }
+
+  /// A new streamed frame is available.
+  ///
+  /// Listening to this stream will start streaming, and canceling will stop.
+  /// Pausing will throw a [CameraException], as pausing the stream would cause
+  /// very high memory usage; to temporarily stop receiving frames, cancel, then
+  /// listen again later.
+  ///
+  ///
+  // TODO(bmparr): Add options to control streaming settings (e.g.,
+  // resolution and FPS).
+  Stream<CameraImageData> onStreamedFrameAvailable(int cameraId,
+      {CameraImageStreamOptions? options}) {
+    throw UnimplementedError('onStreamedFrameAvailable() is not implemented.');
   }
 
   /// Sets the flash mode for the selected camera.
@@ -247,6 +269,12 @@ abstract class CameraPlatform extends PlatformInterface {
     throw UnimplementedError('pausePreview() is not implemented.');
   }
 
+  /// Sets the active camera while recording.
+  Future<void> setDescriptionWhileRecording(CameraDescription description) {
+    throw UnimplementedError(
+        'setDescriptionWhileRecording() is not implemented.');
+  }
+
   /// Returns a widget showing a live camera preview.
   Widget buildPreview(int cameraId) {
     throw UnimplementedError('buildView() has not been implemented.');
@@ -258,7 +286,7 @@ abstract class CameraPlatform extends PlatformInterface {
   }
 
   //Aardman-Animator
-
+  
   /// Enables Chromakeying
   Future<void> enableFilters() {
     throw UnimplementedError('enableFilters() is not implemented.');
@@ -269,8 +297,9 @@ abstract class CameraPlatform extends PlatformInterface {
     throw UnimplementedError('disableFilters() is not implemented.');
   }
 
-   /// Changes parameters for filters, eg: background  path and hue
+  /// Changes parameters for filters, eg: background  path and hue
   Future<void> updateFilters(Map data) {
     throw UnimplementedError('updateFilters() is not implemented.');
   }
+
 }
