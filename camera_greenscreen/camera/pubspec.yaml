@@ -25,10 +25,17 @@ flutter:
 
 dependencies: 
 #  camera_platform_interface: ^2.1.0
+#  camera_platform_interface:
+#    git:
+#      url: https://github.com/Aardman/flutter-camera-greenscreen
+#      path: camera_greenscreen/camera_platform_interface
+#
   camera_platform_interface:
     git:
       url: https://github.com/Aardman/flutter-camera-greenscreen
+      ref: feature/camera-update-test
       path: camera_greenscreen/camera_platform_interface
+
   #camera_web: ^0.2.1 
   camera_web:
     git:
