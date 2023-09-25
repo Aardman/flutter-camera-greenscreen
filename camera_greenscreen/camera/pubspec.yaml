@@ -40,6 +40,7 @@ dependencies:
   camera_web:
     git:
       url: https://github.com/Aardman/flutter-camera-greenscreen
+      ref: feature/camera-update-test
       path: camera_greenscreen/camera_web
   flutter:
     sdk: flutter
