@@ -23,8 +23,22 @@ final class CameraPermissions {
     void onResult(String errorCode, String errorDescription);
   }
 
+  /**
+   * Camera access permission errors handled when camera is created. See {@code MethodChannelCamera}
+   * in {@code camera/camera_platform_interface} for details.
+   */
+  private static final String CAMERA_PERMISSIONS_REQUEST_ONGOING =
+      "CameraPermissionsRequestOngoing";
+
+  private static final String CAMERA_PERMISSIONS_REQUEST_ONGOING_MESSAGE =
+      "Another request is ongoing and multiple requests cannot be handled at once.";
+  private static final String CAMERA_ACCESS_DENIED = "CameraAccessDenied";
+  private static final String CAMERA_ACCESS_DENIED_MESSAGE = "Camera access permission was denied.";
+  private static final String AUDIO_ACCESS_DENIED = "AudioAccessDenied";
+  private static final String AUDIO_ACCESS_DENIED_MESSAGE = "Audio access permission was denied.";
+
   private static final int CAMERA_REQUEST_ID = 9796;
-  private boolean ongoing = false;
+  @VisibleForTesting boolean ongoing = false;
 
   void requestPermissions(
       Activity activity,
@@ -32,7 +46,9 @@ final class CameraPermissions {
       boolean enableAudio,
       ResultCallback callback) {
     if (ongoing) {
-      callback.onResult("cameraPermission", "Camera permission request ongoing");
+      callback.onResult(
+          CAMERA_PERMISSIONS_REQUEST_ONGOING, CAMERA_PERMISSIONS_REQUEST_ONGOING_MESSAGE);
+      return;
     }
     if (!hasCameraPermission(activity) || (enableAudio && !hasAudioPermission(activity))) {
       permissionsRegistry.addListener(
@@ -89,10 +105,12 @@ final class CameraPermissions {
       }
 
       alreadyCalled = true;
-      if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-        callback.onResult("cameraPermission", "MediaRecorderCamera permission not granted");
+      // grantResults could be empty if the permissions request with the user is interrupted
+      // https://developer.android.com/reference/android/app/Activity#onRequestPermissionsResult(int,%20java.lang.String[],%20int[])
+      if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+        callback.onResult(CAMERA_ACCESS_DENIED, CAMERA_ACCESS_DENIED_MESSAGE);
       } else if (grantResults.length > 1 && grantResults[1] != PackageManager.PERMISSION_GRANTED) {
-        callback.onResult("cameraPermission", "MediaRecorderAudio permission not granted");
+        callback.onResult(AUDIO_ACCESS_DENIED, AUDIO_ACCESS_DENIED_MESSAGE);
       } else {
         callback.onResult(null, null);
       }

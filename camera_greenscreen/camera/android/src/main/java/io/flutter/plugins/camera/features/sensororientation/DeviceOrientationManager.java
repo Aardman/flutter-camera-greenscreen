@@ -14,6 +14,7 @@ import android.view.Display;
 import android.view.Surface;
 import android.view.WindowManager;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.DeviceOrientation;
@@ -35,6 +36,7 @@ public class DeviceOrientationManager {
   private BroadcastReceiver broadcastReceiver;
 
   /** Factory method to create a device orientation manager. */
+  @NonNull
   public static DeviceOrientationManager create(
       @NonNull Activity activity,
       @NonNull DartMessenger messenger,
@@ -112,7 +114,7 @@ public class DeviceOrientationManager {
    *     into degrees.
    * @return The device's photo orientation in degrees.
    */
-  public int getPhotoOrientation(PlatformChannel.DeviceOrientation orientation) {
+  public int getPhotoOrientation(@Nullable PlatformChannel.DeviceOrientation orientation) {
     int angle = 0;
     // Fallback to device orientation when the orientation value is null.
     if (orientation == null) {
@@ -142,28 +144,34 @@ public class DeviceOrientationManager {
   }
 
   /**
-   * Returns the device's video orientation in degrees based on the sensor orientation and the last
-   * known UI orientation.
+   * Returns the device's video orientation in clockwise degrees based on the sensor orientation and
+   * the last known UI orientation.
    *
    * <p>Returns one of 0, 90, 180 or 270.
    *
-   * @return The device's video orientation in degrees.
+   * @return The device's video orientation in clockwise degrees.
    */
   public int getVideoOrientation() {
     return this.getVideoOrientation(this.lastOrientation);
   }
 
   /**
-   * Returns the device's video orientation in degrees based on the sensor orientation and the
-   * supplied {@link PlatformChannel.DeviceOrientation} value.
+   * Returns the device's video orientation in clockwise degrees based on the sensor orientation and
+   * the supplied {@link PlatformChannel.DeviceOrientation} value.
    *
    * <p>Returns one of 0, 90, 180 or 270.
    *
+   * <p>More details can be found in the official Android documentation:
+   * https://developer.android.com/reference/android/media/MediaRecorder#setOrientationHint(int)
+   *
+   * <p>See also:
+   * https://developer.android.com/training/camera2/camera-preview-large-screens#orientation_calculation
+   *
    * @param orientation The {@link PlatformChannel.DeviceOrientation} value that is to be converted
    *     into degrees.
-   * @return The device's video orientation in degrees.
+   * @return The device's video orientation in clockwise degrees.
    */
-  public int getVideoOrientation(PlatformChannel.DeviceOrientation orientation) {
+  public int getVideoOrientation(@Nullable PlatformChannel.DeviceOrientation orientation) {
     int angle = 0;
 
     // Fallback to device orientation when the orientation value is null.
@@ -179,10 +187,10 @@ public class DeviceOrientationManager {
         angle = 180;
         break;
       case LANDSCAPE_LEFT:
-        angle = 90;
+        angle = 270;
         break;
       case LANDSCAPE_RIGHT:
-        angle = 270;
+        angle = 90;
         break;
     }
 
@@ -194,6 +202,7 @@ public class DeviceOrientationManager {
   }
 
   /** @return the last received UI orientation. */
+  @Nullable
   public PlatformChannel.DeviceOrientation getLastUIOrientation() {
     return this.lastOrientation;
   }
@@ -236,6 +245,8 @@ public class DeviceOrientationManager {
    *
    * @return The current user interface orientation.
    */
+  // Configuration.ORIENTATION_SQUARE is deprecated.
+  @SuppressWarnings("deprecation")
   @VisibleForTesting
   PlatformChannel.DeviceOrientation getUIOrientation() {
     final int rotation = getDisplay().getRotation();
@@ -254,6 +265,8 @@ public class DeviceOrientationManager {
         } else {
           return PlatformChannel.DeviceOrientation.LANDSCAPE_RIGHT;
         }
+      case Configuration.ORIENTATION_SQUARE:
+      case Configuration.ORIENTATION_UNDEFINED:
       default:
         return PlatformChannel.DeviceOrientation.PORTRAIT_UP;
     }
